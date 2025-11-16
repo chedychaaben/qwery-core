@@ -26,6 +26,14 @@ export const links = () => [{ rel: 'stylesheet', href: styles }];
 
 const csrfProtect = createCsrfProtect();
 
+export const meta = () => {
+  return [
+    {
+      title: appConfig.title,
+    },
+  ];
+};
+
 function getClassName(theme?: string) {
   const dark = theme === 'dark';
   const light = !dark;
