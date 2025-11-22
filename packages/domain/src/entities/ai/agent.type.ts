@@ -33,7 +33,7 @@ export const AgentStateSchema = z.object({
 @Exclude()
 export class AgentEntity extends Entity<string, typeof AgentSchema> {
   @Expose()
-  public id!: string;
+  declare public id: string;
   @Expose()
   public name!: string;
   @Expose()

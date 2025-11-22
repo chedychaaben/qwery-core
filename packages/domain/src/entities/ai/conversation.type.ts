@@ -37,7 +37,7 @@ export class ConversationEntity extends Entity<
   typeof ConversationSchema
 > {
   @Expose()
-  public id!: string;
+  declare public id: string;
   @Expose()
   public title!: string;
   @Expose()

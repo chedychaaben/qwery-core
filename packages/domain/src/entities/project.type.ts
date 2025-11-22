@@ -2,10 +2,7 @@ import { Entity } from '../common/entity';
 import { z } from 'zod';
 import { Exclude, Expose, plainToClass } from 'class-transformer';
 import { generateIdentity } from '../utils/identity.generator';
-import {
-  CreateProjectInput,
-  UpdateProjectInput,
-} from 'src/usecases/dto/project-usecase-dto';
+import { CreateProjectInput, UpdateProjectInput } from '../usecases';
 
 export const ProjectSchema = z.object({
   id: z.string().uuid().describe('The unique identifier for the project'),
@@ -48,7 +45,7 @@ export type Project = z.infer<typeof ProjectSchema>;
 @Exclude()
 export class ProjectEntity extends Entity<string, typeof ProjectSchema> {
   @Expose()
-  public id!: string;
+  declare public id: string;
   @Expose()
   public org_id!: string;
   @Expose()

@@ -16,7 +16,7 @@ export type Context = z.infer<typeof ContextSchema>;
 @Exclude()
 export class ContextEntity extends Entity<string, typeof ContextSchema> {
   @Expose()
-  public id!: string;
+  declare public id: string;
   @Expose()
   public name!: string;
   @Expose()

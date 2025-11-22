@@ -16,7 +16,7 @@ export type Action = z.infer<typeof ActionSchema>;
 @Exclude()
 export class ActionEntity extends Entity<string, typeof ActionSchema> {
   @Expose()
-  public id!: string;
+  declare public id: string;
   @Expose()
   public name!: string;
   @Expose()

@@ -19,7 +19,7 @@ export class ObservationEntity extends Entity<
   typeof ObservationSchema
 > {
   @Expose()
-  public id!: string;
+  declare public id: string;
   @Expose()
   public name!: string;
   @Expose()

@@ -4,10 +4,7 @@ import { CellTypeSchema } from '../enums/cellType';
 import { RunModeSchema } from '../enums/runMode';
 import { Exclude, Expose, plainToClass } from 'class-transformer';
 import { generateIdentity } from '../utils/identity.generator';
-import {
-  CreateNotebookInput,
-  UpdateNotebookInput,
-} from 'src/usecases/dto/notebook-usecase-dto';
+import { CreateNotebookInput, UpdateNotebookInput } from '../usecases';
 
 const CellSchema = z.object({
   query: z.string().optional().describe('The query of the cell'),
@@ -58,7 +55,7 @@ export type Notebook = z.infer<typeof NotebookSchema>;
 @Exclude()
 export class NotebookEntity extends Entity<string, typeof NotebookSchema> {
   @Expose()
-  public id!: string;
+  declare public id: string;
   @Expose()
   public projectId!: string;
   @Expose()

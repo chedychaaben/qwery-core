@@ -34,7 +34,7 @@ export type Message = z.infer<typeof MessageSchema>;
 @Exclude()
 export class MessageEntity extends Entity<string, typeof MessageSchema> {
   @Expose()
-  public id!: string;
+  declare public id: string;
   @Expose()
   public conversationId!: string;
   @Expose()

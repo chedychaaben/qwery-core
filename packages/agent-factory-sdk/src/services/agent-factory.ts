@@ -7,7 +7,6 @@ import {
 } from '../ports/agent-factory.port';
 import { z } from 'zod';
 import { createAzureModelProvider } from './azure-model.provider';
-import { createBedrockModelProvider } from './bedrock-model.provider';
 import { createOllamaModelProvider } from './ollama-model.provider';
 import { createWebLLMModelProvider } from './webllm-model.provider';
 import {
@@ -98,21 +97,6 @@ export class AgentFactory extends IAgentFactory {
           apiVersion: getEnv('AZURE_API_VERSION'),
           baseURL: getEnv('AZURE_OPENAI_BASE_URL'),
           deployment: getEnv('AZURE_OPENAI_DEPLOYMENT') ?? modelName,
-        }),
-      bedrock: (modelName) =>
-        createBedrockModelProvider({
-          region:
-            getEnv('BEDROCK_REGION') ??
-            getEnv('AWS_REGION') ??
-            requireEnv('AWS_REGION', 'Bedrock', getEnv),
-          accessKeyId: requireEnv('AWS_ACCESS_KEY_ID', 'Bedrock', getEnv),
-          secretAccessKey: requireEnv(
-            'AWS_SECRET_ACCESS_KEY',
-            'Bedrock',
-            getEnv,
-          ),
-          sessionToken: getEnv('AWS_SESSION_TOKEN'),
-          defaultModel: getEnv('BEDROCK_MODEL') ?? modelName,
         }),
       ollama: (modelName) =>
         createOllamaModelProvider({
@@ -218,21 +202,6 @@ export class AgentFactory extends IAgentFactory {
           apiVersion: getEnv('AZURE_API_VERSION'),
           baseURL: getEnv('AZURE_OPENAI_BASE_URL'),
           deployment: getEnv('AZURE_OPENAI_DEPLOYMENT') ?? modelName,
-        }),
-      bedrock: (modelName) =>
-        createBedrockModelProvider({
-          region:
-            getEnv('BEDROCK_REGION') ??
-            getEnv('AWS_REGION') ??
-            requireEnv('AWS_REGION', 'Bedrock', getEnv),
-          accessKeyId: requireEnv('AWS_ACCESS_KEY_ID', 'Bedrock', getEnv),
-          secretAccessKey: requireEnv(
-            'AWS_SECRET_ACCESS_KEY',
-            'Bedrock',
-            getEnv,
-          ),
-          sessionToken: getEnv('AWS_SESSION_TOKEN'),
-          defaultModel: getEnv('BEDROCK_MODEL') ?? modelName,
         }),
       ollama: (modelName) =>
         createOllamaModelProvider({

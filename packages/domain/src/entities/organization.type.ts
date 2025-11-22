@@ -44,7 +44,7 @@ export class OrganizationEntity extends Entity<
   typeof OrganizationSchema
 > {
   @Expose()
-  public id!: string;
+  declare public id: string;
   @Expose()
   public name!: string;
   @Expose()

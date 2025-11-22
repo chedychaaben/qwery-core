@@ -16,7 +16,7 @@ export type Outcome = z.infer<typeof OutcomeSchema>;
 @Exclude()
 export class OutcomeEntity extends Entity<string, typeof OutcomeSchema> {
   @Expose()
-  public id!: string;
+  declare public id: string;
   @Expose()
   public name!: string;
   @Expose()

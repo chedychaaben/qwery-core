@@ -16,7 +16,7 @@ export type Workspace = z.infer<typeof WorkspaceSchema>;
 @Exclude()
 export class WorkspaceEntity extends Entity<string, typeof WorkspaceSchema> {
   @Expose()
-  public id!: string;
+  declare public id: string;
   @Expose()
   public name!: string;
   @Expose()

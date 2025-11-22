@@ -43,7 +43,7 @@ export type Datasource = z.infer<typeof DatasourceSchema>;
 @Exclude()
 export class DatasourceEntity extends Entity<string, typeof DatasourceSchema> {
   @Expose()
-  public id!: string;
+  declare public id: string;
   @Expose()
   public projectId!: string;
   @Expose()

@@ -16,7 +16,7 @@ export type Plan = z.infer<typeof PlanSchema>;
 @Exclude()
 export class PlanEntity extends Entity<string, typeof PlanSchema> {
   @Expose()
-  public id!: string;
+  declare public id: string;
   @Expose()
   public name!: string;
   @Expose()

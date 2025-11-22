@@ -16,7 +16,7 @@ export type Memory = z.infer<typeof MemorySchema>;
 @Exclude()
 export class MemoryEntity extends Entity<string, typeof MemorySchema> {
   @Expose()
-  public id!: string;
+  declare public id: string;
   @Expose()
   public name!: string;
   @Expose()

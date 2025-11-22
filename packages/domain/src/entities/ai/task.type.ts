@@ -16,7 +16,7 @@ export type Task = z.infer<typeof TaskSchema>;
 @Exclude()
 export class TaskEntity extends Entity<string, typeof TaskSchema> {
   @Expose()
-  public id!: string;
+  declare public id: string;
   @Expose()
   public name!: string;
   @Expose()

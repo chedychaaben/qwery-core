@@ -16,7 +16,7 @@ export type Model = z.infer<typeof ModelSchema>;
 @Exclude()
 export class ModelEntity extends Entity<string, typeof ModelSchema> {
   @Expose()
-  public id!: string;
+  declare public id: string;
   @Expose()
   public name!: string;
   @Expose()
