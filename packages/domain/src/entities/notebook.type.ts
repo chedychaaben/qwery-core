@@ -2,9 +2,12 @@ import { Entity } from '../common/entity';
 import { z } from 'zod';
 import { CellTypeSchema } from '../enums/cellType';
 import { RunModeSchema } from '../enums/runMode';
-import { ICreateNotebookDTO, IUpdateNotebookDTO } from '../dtos/notebook.dto';
 import { Exclude, Expose, plainToClass } from 'class-transformer';
 import { generateIdentity } from '../utils/identity.generator';
+import {
+  CreateNotebookInput,
+  UpdateNotebookInput,
+} from 'src/usecases/dto/notebook-usecase-dto';
 
 const CellSchema = z.object({
   query: z.string().optional().describe('The query of the cell'),
@@ -77,7 +80,7 @@ export class NotebookEntity extends Entity<string, typeof NotebookSchema> {
   @Expose()
   public cells!: Cell[];
 
-  public static create(newNotebook: ICreateNotebookDTO): NotebookEntity {
+  public static create(newNotebook: CreateNotebookInput): NotebookEntity {
     const { id, slug } = generateIdentity();
     const now = new Date();
     const notebook: Notebook = {
@@ -98,7 +101,7 @@ export class NotebookEntity extends Entity<string, typeof NotebookSchema> {
 
   public static update(
     notebook: Notebook,
-    notebookDTO: IUpdateNotebookDTO,
+    notebookDTO: UpdateNotebookInput,
   ): NotebookEntity {
     const date = new Date();
 
