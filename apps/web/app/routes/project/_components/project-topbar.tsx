@@ -28,7 +28,7 @@ export function ProjectLayoutTopBar() {
         <div className="flex items-center space-x-4">
           <AppLogo />
           {workspace.mode === WorkspaceModeEnum.SIMPLE ? null : (
-            <SidebarTrigger />
+            <SidebarTrigger className="lg:hidden" />
           )}
           <WorkspaceModeSwitch
             onChange={handleSwitchWorkspaceMode}

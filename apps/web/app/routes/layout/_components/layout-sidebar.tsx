@@ -5,7 +5,6 @@ import {
   Sidebar,
   SidebarFooter,
   SidebarHeader,
-  useSidebar,
 } from '@qwery/ui/shadcn-sidebar';
 
 import { AccountDropdownContainer } from '~/components/account-dropdown-container';
@@ -19,14 +18,12 @@ export function LayoutSidebar(
   const params = useParams();
   const navigate = useNavigate();
   const project_id = params.slug as string;
-  const { state: sidebarState } = useSidebar();
-  const isSidebarCollapsed = sidebarState === 'collapsed';
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="none">
       <SidebarHeader className={'h-16 justify-center'}>
         <div className="flex w-full items-center justify-center">
           <NewDatasource
-            showLabel={!isSidebarCollapsed}
+            showLabel
             onClick={() => {
               navigate(
                 createPath(pathsConfig.app.availableSources, project_id),

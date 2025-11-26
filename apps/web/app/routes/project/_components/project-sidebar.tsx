@@ -9,7 +9,6 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
-  useSidebar,
 } from '@qwery/ui/shadcn-sidebar';
 import { SidebarNavigation } from '@qwery/ui/sidebar-navigation';
 
@@ -48,8 +47,6 @@ export function ProjectSidebar() {
   const telemetry = useTelemetry();
   const params = useParams();
   const slug = params.slug as string;
-  const { state: sidebarState } = useSidebar();
-  const isSidebarCollapsed = sidebarState === 'collapsed';
 
   const notebookRepository = repositories.notebook;
   const notebooks = useGetNotebooksByProjectId(
@@ -235,11 +232,11 @@ export function ProjectSidebar() {
   );
   return (
     <>
-      <Sidebar collapsible="icon">
+      <Sidebar collapsible="none">
         <SidebarHeader className={'h-16 justify-center'}>
           <div className="flex w-full items-center justify-center">
             <NewDatasource
-              showLabel={!isSidebarCollapsed}
+              showLabel
               onClick={() => {
                 telemetry.trackEvent(PROJECT_EVENTS.NEW_DATASOURCE_CLICKED);
                 navigate(createPath(pathsConfig.app.availableSources, slug));
