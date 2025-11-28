@@ -92,7 +92,16 @@ export class NotebookEntity extends Entity<string, typeof NotebookSchema> {
       createdAt: now,
       updatedAt: now,
       datasources: [],
-      cells: [],
+      cells: [
+        {
+          cellId: 1,
+          cellType: 'query',
+          query: '',
+          datasources: [],
+          isActive: true,
+          runMode: 'default',
+        },
+      ],
     };
 
     return plainToClass(NotebookEntity, NotebookSchema.parse(notebook));

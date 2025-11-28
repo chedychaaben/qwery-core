@@ -20,10 +20,9 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Loader2, Pencil, Trash2 } from 'lucide-react';
-// @ts-ignore - motion is available via @qwery/ui
-import { motion, AnimatePresence } from 'motion/react';
 
 import type { DatasourceResultSet, Notebook } from '@qwery/domain/entities';
+import { WorkspaceModeEnum } from '@qwery/domain/enums';
 import { Button } from '@qwery/ui/button';
 import {
   Popover,
@@ -39,9 +38,13 @@ import {
 import { Input } from '@qwery/ui/input';
 
 import { CellDivider } from './cell-divider';
-import { NotebookCell, type NotebookCellData } from './components/notebook-cell';
+import {
+  NotebookCell,
+  type NotebookCellData,
+  type NotebookDatasourceInfo,
+} from './notebook-cell';
 import { NotebookDataGrid } from './notebook-datagrid';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { sql } from '@codemirror/lang-sql';
 import { oneDark } from '@codemirror/theme-one-dark';
 import CodeMirror from '@uiw/react-codemirror';
@@ -56,7 +59,7 @@ interface NotebookUIProps {
   notebook?: Notebook;
   initialCells?: NotebookCellData[];
   title?: string;
-  datasources?: Array<{ id: string; name: string }>;
+  datasources?: NotebookDatasourceInfo[];
   onRunQuery?: (cellId: number, query: string, datasourceId: string) => void;
   onRunQueryWithAgent?: (
     cellId: number,
@@ -70,10 +73,11 @@ interface NotebookUIProps {
   cellLoadingStates?: Map<number, boolean>;
   onDeleteNotebook?: () => void;
   isDeletingNotebook?: boolean;
+  workspaceMode?: WorkspaceModeEnum;
 }
 
 // Sortable wrapper for cells
-function SortableCell({
+const SortableCell = React.memo(function SortableCellComponent({
   cell,
   isCollapsed,
   onToggleCollapse,
@@ -91,29 +95,33 @@ function SortableCell({
   onFormat,
   onDelete,
   onFullView,
-  animatingCell,
+  isAdvancedMode,
   activeAiPopup,
   onOpenAiPopup,
   onCloseAiPopup,
 }: {
   cell: NotebookCellData;
   isCollapsed: boolean;
-  onToggleCollapse: () => void;
-  onQueryChange: (query: string) => void;
-  onDatasourceChange: (datasourceId: string | null) => void;
-  onRunQuery?: (query: string, datasourceId: string) => void;
-  onRunQueryWithAgent?: (query: string, datasourceId: string) => void;
-  datasources: Array<{ id: string; name: string }>;
+  onToggleCollapse: (cellId: number) => void;
+  onQueryChange: (cellId: number, query: string) => void;
+  onDatasourceChange: (cellId: number, datasourceId: string | null) => void;
+  onRunQuery?: (cellId: number, query: string, datasourceId: string) => void;
+  onRunQueryWithAgent?: (
+    cellId: number,
+    query: string,
+    datasourceId: string,
+  ) => void;
+  datasources: NotebookDatasourceInfo[];
   result?: DatasourceResultSet | null;
   error?: string;
   isLoading?: boolean;
-  onMoveUp: () => void;
-  onMoveDown: () => void;
-  onDuplicate: () => void;
-  onFormat: () => void;
-  onDelete: () => void;
-  onFullView: () => void;
-  animatingCell: { cellId: number; animation: string } | null;
+  onMoveUp: (cellId: number) => void;
+  onMoveDown: (cellId: number) => void;
+  onDuplicate: (cellId: number) => void;
+  onFormat: (cellId: number) => void;
+  onDelete: (cellId: number) => void;
+  onFullView: (cellId: number) => void;
+  isAdvancedMode: boolean;
   activeAiPopup: { cellId: number; position: { x: number; y: number } } | null;
   onOpenAiPopup: (cellId: number, position: { x: number; y: number }) => void;
   onCloseAiPopup: () => void;
@@ -122,6 +130,7 @@ function SortableCell({
     attributes,
     listeners,
     setNodeRef,
+    setActivatorNodeRef,
     transform,
     transition,
     isDragging,
@@ -134,73 +143,104 @@ function SortableCell({
     transition,
   };
 
-  const isAnimating = animatingCell?.cellId === cell.cellId;
-  const animationType = isAnimating ? animatingCell.animation : null;
+  const handleToggleCollapse = useCallback(() => {
+    onToggleCollapse(cell.cellId);
+  }, [cell.cellId, onToggleCollapse]);
 
-  // Disable layout animation during drag to prevent conflicts with dnd-kit
-  // Only enable layout for button-based reordering (move-up/move-down)
-  const shouldAnimateLayout = !isDragging && (animationType === 'move-up' || animationType === 'move-down');
+  const handleQueryChange = useCallback(
+    (value: string) => {
+      onQueryChange(cell.cellId, value);
+    },
+    [cell.cellId, onQueryChange],
+  );
+
+  const handleDatasourceChange = useCallback(
+    (datasourceId: string | null) => {
+      onDatasourceChange(cell.cellId, datasourceId);
+    },
+    [cell.cellId, onDatasourceChange],
+  );
+
+  const handleRunQuery = useCallback(
+    (query: string, datasourceId: string) => {
+      onRunQuery?.(cell.cellId, query, datasourceId);
+    },
+    [cell.cellId, onRunQuery],
+  );
+
+  const handleRunQueryWithAgent = useCallback(
+    (query: string, datasourceId: string) => {
+      onRunQueryWithAgent?.(cell.cellId, query, datasourceId);
+    },
+    [cell.cellId, onRunQueryWithAgent],
+  );
+
+  const handleMoveUp = useCallback(() => {
+    onMoveUp(cell.cellId);
+  }, [cell.cellId, onMoveUp]);
+
+  const handleMoveDown = useCallback(() => {
+    onMoveDown(cell.cellId);
+  }, [cell.cellId, onMoveDown]);
+
+  const handleDuplicate = useCallback(() => {
+    onDuplicate(cell.cellId);
+  }, [cell.cellId, onDuplicate]);
+
+  const handleFormat = useCallback(() => {
+    onFormat(cell.cellId);
+  }, [cell.cellId, onFormat]);
+
+  const handleDelete = useCallback(() => {
+    onDelete(cell.cellId);
+  }, [cell.cellId, onDelete]);
+
+  const handleFullView = useCallback(() => {
+    onFullView(cell.cellId);
+  }, [cell.cellId, onFullView]);
 
   return (
-    <motion.div
+    <div
       ref={setNodeRef}
-      style={style}
-      layout={shouldAnimateLayout}
-      layoutDependency={shouldAnimateLayout ? cell.cellId : undefined}
-      initial={
-        animationType === 'duplicate' || animationType === 'add'
-          ? { opacity: 0, scale: 0.95, y: -10 }
-          : false
-      }
-      animate={
-        isDragging
-          ? {}
-          : animationType === 'duplicate' || animationType === 'add'
-            ? { opacity: 1, scale: 1, y: 0 }
-            : animationType === 'delete'
-              ? { opacity: 0, scale: 0.95, y: -10 }
-              : {}
-      }
-      exit={animationType === 'delete' ? { opacity: 0, scale: 0.95, y: -10 } : undefined}
-      transition={
-        isDragging
-          ? { duration: 0 }
-          : animationType === 'duplicate' || animationType === 'add'
-            ? { duration: 0.3, ease: 'easeOut' }
-            : animationType === 'delete'
-              ? { duration: 0.2, ease: 'easeIn' }
-              : shouldAnimateLayout
-                ? { layout: { duration: 0.3, ease: 'easeInOut' } }
-                : { duration: 0.3, ease: 'easeInOut' }
-      }
+      {...attributes}
+      style={{
+        ...style,
+        transition: isDragging
+          ? 'transform 0s'
+          : 'transform 250ms cubic-bezier(0.4, 0, 0.2, 1)',
+      }}
+      className="transition-opacity duration-200 ease-out data-[dragging=true]:opacity-80"
+      data-dragging={isDragging ? 'true' : 'false'}
     >
       <NotebookCell
         cell={cell}
         datasources={datasources}
         isCollapsed={isCollapsed}
-        onToggleCollapse={onToggleCollapse}
-        onQueryChange={onQueryChange}
-        onDatasourceChange={onDatasourceChange}
-        onRunQuery={onRunQuery}
-        onRunQueryWithAgent={onRunQueryWithAgent}
-        dragHandleProps={{ ...attributes, ...listeners }}
+        onToggleCollapse={handleToggleCollapse}
+        onQueryChange={handleQueryChange}
+        onDatasourceChange={handleDatasourceChange}
+        onRunQuery={handleRunQuery}
+        onRunQueryWithAgent={handleRunQueryWithAgent}
+        dragHandleProps={listeners}
+        dragHandleRef={setActivatorNodeRef}
         isDragging={isDragging}
         result={result}
         error={error}
         isLoading={isLoading}
-        onMoveUp={onMoveUp}
-        onMoveDown={onMoveDown}
-        onDuplicate={onDuplicate}
-        onFormat={onFormat}
-        onDelete={onDelete}
-        onFullView={onFullView}
+        onMoveUp={handleMoveUp}
+        onMoveDown={handleMoveDown}
+        onDuplicate={handleDuplicate}
+        onFormat={handleFormat}
+        onDelete={handleDelete}
+        onFullView={handleFullView}
+        isAdvancedMode={isAdvancedMode}
         activeAiPopup={activeAiPopup}
         onOpenAiPopup={onOpenAiPopup}
         onCloseAiPopup={onCloseAiPopup}
       />
-    </motion.div>
+    </div>
   );
-}
+});
 
 function FullViewDialog({
   cellId,
@@ -448,6 +488,7 @@ export function NotebookUI({
   cellLoadingStates: externalCellLoadingStates,
   onDeleteNotebook,
   isDeletingNotebook,
+  workspaceMode,
 }: NotebookUIProps) {
   // Initialize cells from notebook or initialCells, default to empty array
   const [cells, setCells] = React.useState<NotebookCellData[]>(() => {
@@ -476,11 +517,6 @@ export function NotebookUI({
     null,
   );
 
-  const [animatingCell, setAnimatingCell] = useState<{
-    cellId: number;
-    animation: 'move-up' | 'move-down' | 'duplicate' | 'delete' | 'add';
-  } | null>(null);
-
   const [activeAiPopup, setActiveAiPopup] = useState<{
     cellId: number;
     position: { x: number; y: number };
@@ -506,6 +542,11 @@ export function NotebookUI({
       coordinateGetter: sortableKeyboardCoordinates,
     }),
   );
+
+  const isAdvancedMode =
+    workspaceMode !== undefined
+      ? workspaceMode === WorkspaceModeEnum.ADVANCED
+      : true;
 
   // Sync with notebook prop if provided
   React.useEffect(() => {
@@ -542,7 +583,7 @@ export function NotebookUI({
     }
   };
 
-  const handleToggleCollapse = (cellId: number) => {
+  const handleToggleCollapse = useCallback((cellId: number) => {
     setCollapsedCells((prev) => {
       const next = new Set(prev);
       if (next.has(cellId)) {
@@ -552,7 +593,7 @@ export function NotebookUI({
       }
       return next;
     });
-  };
+  }, []);
 
   const handleAddCell = (
     afterCellId?: number,
@@ -566,8 +607,7 @@ export function NotebookUI({
       query: '',
       cellId: maxCellId + 1,
       cellType,
-      datasources:
-        datasources.length > 0 && datasources[0] ? [datasources[0].id] : [],
+      datasources: [],
       isActive: true,
       runMode: 'default',
     };
@@ -583,18 +623,14 @@ export function NotebookUI({
       ];
       setCells(newCells);
       onCellsChange?.(newCells);
-      setAnimatingCell({ cellId: newCell.cellId, animation: 'add' });
-      setTimeout(() => setAnimatingCell(null), 400);
     } else {
       const newCells = [...cells, newCell];
       setCells(newCells);
       onCellsChange?.(newCells);
-      setAnimatingCell({ cellId: newCell.cellId, animation: 'add' });
-      setTimeout(() => setAnimatingCell(null), 400);
     }
   };
 
-  const handleQueryChange = (cellId: number, query: string) => {
+  const handleQueryChange = useCallback((cellId: number, query: string) => {
     setCells((prev) => {
       const newCells = prev.map((cell) =>
         cell.cellId === cellId ? { ...cell, query } : cell,
@@ -602,12 +638,10 @@ export function NotebookUI({
       onCellsChange?.(newCells);
       return newCells;
     });
-  };
+  }, [onCellsChange]);
 
-  const handleDatasourceChange = (
-    cellId: number,
-    datasourceId: string | null,
-  ) => {
+  const handleDatasourceChange = useCallback(
+    (cellId: number, datasourceId: string | null) => {
     setCells((prev) => {
       const newCells = prev.map((cell) =>
         cell.cellId === cellId
@@ -617,25 +651,25 @@ export function NotebookUI({
       onCellsChange?.(newCells);
       return newCells;
     });
-  };
+    },
+    [onCellsChange],
+  );
 
-  const handleRunQuery = (
-    cellId: number,
-    query: string,
-    datasourceId: string,
-  ) => {
-    onRunQuery?.(cellId, query, datasourceId);
-  };
+  const handleRunQuery = useCallback(
+    (cellId: number, query: string, datasourceId: string) => {
+      onRunQuery?.(cellId, query, datasourceId);
+    },
+    [onRunQuery],
+  );
 
-  const handleRunQueryWithAgent = (
-    cellId: number,
-    query: string,
-    datasourceId: string,
-  ) => {
-    onRunQueryWithAgent?.(cellId, query, datasourceId);
-  };
+  const handleRunQueryWithAgent = useCallback(
+    (cellId: number, query: string, datasourceId: string) => {
+      onRunQueryWithAgent?.(cellId, query, datasourceId);
+    },
+    [onRunQueryWithAgent],
+  );
 
-  const handleMoveCellUp = (cellId: number) => {
+  const handleMoveCellUp = useCallback((cellId: number) => {
     setCells((prev) => {
       const index = prev.findIndex((c) => c.cellId === cellId);
       if (index > 0) {
@@ -650,9 +684,9 @@ export function NotebookUI({
       }
       return prev;
     });
-  };
+  }, [onCellsChange]);
 
-  const handleMoveCellDown = (cellId: number) => {
+  const handleMoveCellDown = useCallback((cellId: number) => {
     setCells((prev) => {
       const index = prev.findIndex((c) => c.cellId === cellId);
       if (index < prev.length - 1) {
@@ -667,9 +701,9 @@ export function NotebookUI({
       }
       return prev;
     });
-  };
+  }, [onCellsChange]);
 
-  const handleDuplicateCell = (cellId: number) => {
+  const handleDuplicateCell = useCallback((cellId: number) => {
     setCells((prev) => {
       const cell = prev.find((c) => c.cellId === cellId);
       if (!cell) return prev;
@@ -687,13 +721,11 @@ export function NotebookUI({
         ...prev.slice(index + 1),
       ];
       onCellsChange?.(newCells);
-      setAnimatingCell({ cellId: newCell.cellId, animation: 'duplicate' });
-      setTimeout(() => setAnimatingCell(null), 500);
       return newCells;
     });
-  };
+  }, [onCellsChange]);
 
-  const handleFormatCell = (cellId: number) => {
+  const handleFormatCell = useCallback((cellId: number) => {
     setCells((prev) => {
       const cell = prev.find((c) => c.cellId === cellId);
       if (!cell || !cell.query) return prev;
@@ -708,23 +740,21 @@ export function NotebookUI({
       onCellsChange?.(newCells);
       return newCells;
     });
-  };
+  }, [onCellsChange]);
 
-  const handleDeleteCell = (cellId: number) => {
-    setAnimatingCell({ cellId, animation: 'delete' });
+  const handleDeleteCell = useCallback((cellId: number) => {
     setTimeout(() => {
       setCells((prev) => {
         const newCells = prev.filter((c) => c.cellId !== cellId);
         onCellsChange?.(newCells);
-        setAnimatingCell(null);
         return newCells;
       });
     }, 200);
-  };
+  }, [onCellsChange]);
 
-  const handleFullView = (cellId: number) => {
+  const handleFullView = useCallback((cellId: number) => {
     setFullViewCellId(cellId);
-  };
+  }, []);
 
   // Get default title from notebook or prop
   const displayTitle = title || notebook?.title || '';
@@ -776,26 +806,29 @@ export function NotebookUI({
     }
   };
 
-  // Get all available datasources - combine notebook datasources with prop datasources
-  const allDatasources = React.useMemo(() => {
-    // Get datasource IDs from notebook
+  const allDatasources = useMemo((): NotebookDatasourceInfo[] => {
     const notebookDatasourceIds = notebook?.datasources || [];
 
-    // If we have datasources prop with full info, use those
     if (datasources.length > 0) {
-      // Merge notebook datasources with prop datasources, removing duplicates
       const allIds = new Set([
         ...notebookDatasourceIds,
         ...datasources.map((ds) => ds.id),
       ]);
       return Array.from(allIds).map((id) => {
         const found = datasources.find((ds) => ds.id === id);
-        return found || { id, name: id }; // Fallback to ID as name if not found
+        return (
+          found || {
+            id,
+            name: id,
+          }
+        );
       });
     }
 
-    // If no datasources prop, create objects from notebook datasource IDs
-    return notebookDatasourceIds.map((id: string) => ({ id, name: id }));
+    return notebookDatasourceIds.map((id: string) => ({
+      id,
+      name: id,
+    }));
   }, [notebook?.datasources, datasources]);
 
   return (
@@ -856,8 +889,7 @@ export function NotebookUI({
             strategy={verticalListSortingStrategy}
           >
             <div className="flex flex-col">
-              <AnimatePresence mode="popLayout">
-                {cells.map((cell, index) => {
+              {cells.map((cell, index) => {
                 // Get error for this specific cell only - ensure strict isolation
                 let cellError: string | undefined = undefined;
                 if (externalCellErrors && externalCellErrors instanceof Map) {
@@ -876,34 +908,22 @@ export function NotebookUI({
                     <SortableCell
                       cell={cell}
                       isCollapsed={collapsedCells.has(cell.cellId)}
-                      onToggleCollapse={() => handleToggleCollapse(cell.cellId)}
-                      onQueryChange={(query) =>
-                        handleQueryChange(cell.cellId, query)
-                      }
-                      onDatasourceChange={(datasourceId) =>
-                        handleDatasourceChange(cell.cellId, datasourceId)
-                      }
-                      onRunQuery={(query, datasourceId) => {
-                        handleRunQuery(cell.cellId, query, datasourceId);
-                      }}
-                      onRunQueryWithAgent={(query, datasourceId) => {
-                        handleRunQueryWithAgent(
-                          cell.cellId,
-                          query,
-                          datasourceId,
-                        );
-                      }}
+                      onToggleCollapse={handleToggleCollapse}
+                      onQueryChange={handleQueryChange}
+                      onDatasourceChange={handleDatasourceChange}
+                      onRunQuery={handleRunQuery}
+                      onRunQueryWithAgent={handleRunQueryWithAgent}
                       datasources={allDatasources}
                       result={cellResults.get(cell.cellId)}
                       error={cellError}
                       isLoading={isLoading}
-                      onMoveUp={() => handleMoveCellUp(cell.cellId)}
-                      onMoveDown={() => handleMoveCellDown(cell.cellId)}
-                      onDuplicate={() => handleDuplicateCell(cell.cellId)}
-                      onFormat={() => handleFormatCell(cell.cellId)}
-                      onDelete={() => handleDeleteCell(cell.cellId)}
-                      onFullView={() => handleFullView(cell.cellId)}
-                      animatingCell={animatingCell}
+                      onMoveUp={handleMoveCellUp}
+                      onMoveDown={handleMoveCellDown}
+                      onDuplicate={handleDuplicateCell}
+                      onFormat={handleFormatCell}
+                      onDelete={handleDeleteCell}
+                      onFullView={handleFullView}
+                    isAdvancedMode={isAdvancedMode}
                       activeAiPopup={activeAiPopup}
                       onOpenAiPopup={handleOpenAiPopup}
                       onCloseAiPopup={handleCloseAiPopup}
@@ -916,7 +936,6 @@ export function NotebookUI({
                   </React.Fragment>
                 );
               })}
-              </AnimatePresence>
               {/* Divider at the end */}
               <CellDivider onAddCell={(type) => handleAddCell(undefined, type)} />
             </div>

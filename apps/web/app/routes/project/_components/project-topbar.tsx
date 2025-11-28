@@ -20,7 +20,11 @@ export function ProjectLayoutTopBar() {
   const { mutate: switchWorkspaceMode } = useSwitchWorkspaceMode();
 
   const handleSwitchWorkspaceMode = (mode: string) => {
-    switchWorkspaceMode(mode as WorkspaceModeEnum);
+    switchWorkspaceMode(mode as WorkspaceModeEnum, {
+      onSuccess: () => {
+        window.location.reload();
+      },
+    });
   };
   return (
     <PageTopBar>

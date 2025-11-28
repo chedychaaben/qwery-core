@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
 import { Navigate, useNavigate, useParams } from 'react-router';
 
@@ -20,6 +21,7 @@ import { useGetDatasourcesByProjectId } from '~/lib/queries/use-get-datasources'
 import { useGetNotebook } from '~/lib/queries/use-get-notebook';
 import { NOTEBOOK_EVENTS, telemetry } from '@qwery/telemetry';
 import { Skeleton } from '@qwery/ui/skeleton';
+import { getAllExtensionMetadata } from '@qwery/extensions-sdk';
 
 export default function NotebookPage() {
   const params = useParams();
@@ -54,6 +56,22 @@ export default function NotebookPage() {
     datasourceRepository,
     workspace.projectId as string,
   );
+
+  const { data: pluginMetadata = [] } = useQuery({
+    queryKey: ['all-plugin-metadata'],
+    queryFn: () => getAllExtensionMetadata(),
+    staleTime: 60 * 1000,
+  });
+
+  const pluginLogoMap = useMemo(() => {
+    const map = new Map<string, string>();
+    pluginMetadata.forEach((plugin) => {
+      if (plugin?.id && plugin.logo) {
+        map.set(plugin.id, plugin.logo);
+      }
+    });
+    return map;
+  }, [pluginMetadata]);
 
   // Save notebook mutation
   const saveNotebookMutation = useNotebook(
@@ -370,10 +388,18 @@ export default function NotebookPage() {
   }, [normalizedNotebook?.updatedAt]);
 
   // Map datasources to the format expected by NotebookUI
-  const datasources = savedDatasources.data?.map((ds) => ({
-    id: ds.id,
-    name: ds.name,
-  }));
+  const datasources = useMemo(() => {
+    if (!savedDatasources.data) return [];
+    return savedDatasources.data.map((ds) => ({
+      id: ds.id,
+      name: ds.name,
+      provider: ds.datasource_provider,
+      logo:
+        ds.datasource_provider && pluginLogoMap.get(ds.datasource_provider)
+          ? pluginLogoMap.get(ds.datasource_provider)
+          : undefined,
+    }));
+  }, [savedDatasources.data, pluginLogoMap]);
 
   // Create loading states map
   const cellLoadingStates = new Map<number, boolean>();
@@ -386,11 +412,10 @@ export default function NotebookPage() {
 
   // Convert NotebookUseCaseDto to Notebook format
   return (
-    <>
+    <div className="h-full w-full overflow-hidden">
       {notebook.isLoading && <Skeleton className="h-full w-full" />}
       {notebook.isError && <Navigate to="/404" />}
       {normalizedNotebook && (
-        <>
           <NotebookUI
             notebook={normalizedNotebook}
             datasources={datasources}
@@ -403,10 +428,10 @@ export default function NotebookPage() {
             cellLoadingStates={cellLoadingStates}
             onDeleteNotebook={handleDeleteNotebook}
             isDeletingNotebook={deleteNotebookMutation.isPending}
+            workspaceMode={workspace.mode}
           />
-        </>
       )}
-    </>
+    </div>
   );
 }
 

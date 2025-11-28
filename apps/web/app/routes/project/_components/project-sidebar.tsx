@@ -33,13 +33,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@qwery/ui/alert-dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@qwery/ui/dropdown-menu';
-import { Loader2, MoreHorizontal, Trash2 } from 'lucide-react';
+import { Loader2, Plus } from 'lucide-react';
 
 export function ProjectSidebar() {
   const navigate = useNavigate();
@@ -179,49 +173,22 @@ export function ProjectSidebar() {
 
   const notebookGroupAction =
     workspace.projectId ? (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            size="icon"
-            variant="ghost"
-            className="h-7 w-7"
-            aria-label="Notebook options"
-            disabled={isCreatingNotebook || isBulkDeleting}
-            onClick={(event) => event.stopPropagation()}
-          >
-            {isCreatingNotebook ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <MoreHorizontal className="h-4 w-4" />
-            )}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" side="bottom">
-          <DropdownMenuItem
-            onSelect={(event) => {
-              event.preventDefault();
-              handleCreateNotebook();
-            }}
-            disabled={isCreatingNotebook}
-          >
-            New notebook
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            className="text-destructive focus:text-destructive"
-            onSelect={(event) => {
-              event.preventDefault();
-              if (hasNotebooks) {
-                setShowDeleteAllDialog(true);
-              } else {
-                toast.error('No notebooks to delete');
-              }
-            }}
-            disabled={!hasNotebooks || isBulkDeleting}
-          >
-            Delete all notebooks
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <span
+        className="flex h-full w-full items-center justify-center"
+        onClick={(event) => {
+          event.stopPropagation();
+          if (!isCreatingNotebook && !isBulkDeleting) {
+            handleCreateNotebook();
+          }
+        }}
+        aria-label="Add new notebook"
+      >
+        {isCreatingNotebook ? (
+          <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+        ) : (
+          <Plus className="h-4 w-4 shrink-0" />
+        )}
+      </span>
     ) : undefined;
 
   const navigationConfig = createNavigationConfig(
@@ -251,14 +218,45 @@ export function ProjectSidebar() {
 
         <SidebarFooter>
           <div className="flex flex-col space-y-2 p-4">
-            <Shortcuts
-              items={[
-                {
-                  text: 'Agent',
-                  keys: ['⌘', 'L'],
-                },
-              ]}
-            />
+            <div
+              onClick={() => {
+                const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+                const event = new KeyboardEvent('keydown', {
+                  key: 'l',
+                  code: 'KeyL',
+                  [isMac ? 'metaKey' : 'ctrlKey']: true,
+                  bubbles: true,
+                  cancelable: true,
+                });
+                window.dispatchEvent(event);
+              }}
+              className="cursor-pointer"
+              role="button"
+              tabIndex={0}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+                  const keyboardEvent = new KeyboardEvent('keydown', {
+                    key: 'l',
+                    code: 'KeyL',
+                    [isMac ? 'metaKey' : 'ctrlKey']: true,
+                    bubbles: true,
+                    cancelable: true,
+                  });
+                  window.dispatchEvent(keyboardEvent);
+                }
+              }}
+            >
+              <Shortcuts
+                items={[
+                  {
+                    text: 'Agent',
+                    keys: ['⌘', 'L'],
+                  },
+                ]}
+              />
+            </div>
           </div>
           <AccountDropdownContainer />
         </SidebarFooter>

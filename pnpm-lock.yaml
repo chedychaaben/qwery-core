@@ -794,9 +794,18 @@ importers:
       codemirror:
         specifier: ^6.0.2
         version: 6.0.2
+      motion:
+        specifier: ^12.23.24
+        version: 12.23.24(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       nanoid:
         specifier: ^5.1.6
         version: 5.1.6
+      react-markdown:
+        specifier: ^10.1.0
+        version: 10.1.0(@types/react@19.2.2)(react@19.2.0)
+      remark-gfm:
+        specifier: ^4.0.0
+        version: 4.0.1
     devDependencies:
       '@hookform/resolvers':
         specifier: ^5.2.2
