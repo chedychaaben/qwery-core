@@ -11,18 +11,33 @@ import { fromPromise } from 'xstate/actors';
 import { resolveModel } from '../../services';
 import { testConnection } from '../../tools/test-connection';
 import { gsheetToDuckdb } from '../../tools/gsheet-to-duckdb';
-import { extractSchema } from '../../tools/extract-schema';
+import { extractSchema, extractSchemasParallel } from '../../tools/extract-schema';
+import type { SimpleSchema } from '@qwery/domain/entities';
 import { runQuery } from '../../tools/run-query';
 import {
   registerSheetView,
   loadViewRegistry,
   updateViewUsage,
+  generateSemanticViewName,
+  validateViewExists,
+  validateTableExists,
+  renameView,
+  updateViewName,
+  dropTable,
+  createViewFromTable,
+  withRetry,
+  formatViewCreationError,
+  cleanupOrphanedTempTables,
+  isSystemOrTempTable,
   type RegistryContext,
 } from '../../tools/view-registry';
 import { READ_DATA_AGENT_PROMPT } from '../prompts/read-data-agent.prompt';
 import {
   analyzeSchemaAndUpdateContext,
+  analyzeSchemasAndUpdateContextParallel,
   loadBusinessContext,
+  getConfig,
+  LazyBusinessContextLoader,
 } from '../../services/business-context.service';
 
 // Lazy workspace resolution - only resolve when actually needed, not at module load time
@@ -61,6 +76,11 @@ export const readDataAgent = async (
   conversationId: string,
   messages: UIMessage[],
 ) => {
+  // Cache for view list to avoid redundant calls
+  let cachedViews: Awaited<ReturnType<typeof loadViewRegistry>> | null = null;
+  let cacheTimestamp: number = 0;
+  const CACHE_TTL = 60000; // 1 minute cache
+
   const result = new Agent({
     model: await resolveModel('azure/gpt-5-mini'),
     system: READ_DATA_AGENT_PROMPT,
@@ -83,9 +103,9 @@ export const readDataAgent = async (
         },
       }),
       createDbViewFromSheet: tool({
-        description: 'Create a View from a Google Sheet. IMPORTANT: Only use this when the user explicitly provides a NEW Google Sheet URL that is not already in the registry. Always call listViews first to check if the sheet already exists.',
+        description: 'Create a View from a Google Sheet. Can handle single or multiple sheets. IMPORTANT: Only use this when the user explicitly provides NEW Google Sheet URLs that are not already in the registry. Always call listViews first to check if sheets already exist.',
         inputSchema: z.object({
-          sharedLink: z.string(),
+          sharedLink: z.union([z.string(), z.array(z.string())]),
         }),
         execute: async ({ sharedLink }) => {
           const workspace = getWorkspace();
@@ -99,49 +119,245 @@ export const readDataAgent = async (
           await mkdir(fileDir, { recursive: true });
           const dbPath = join(fileDir, 'database.db');
 
-          // Register the sheet view to get a unique view name
+          // Cleanup orphaned temp tables on startup
+          await cleanupOrphanedTempTables(dbPath);
+
           const context: RegistryContext = {
             conversationDir: fileDir,
           };
-          const { record, isNew } = await registerSheetView(
-            context,
-            sharedLink,
-          );
 
-          // Only recreate the view if it's new, otherwise just return existing info
-          if (isNew) {
-            console.debug(
-              `[ReadDataAgent:${conversationId}] Creating DuckDB view from sheet: ${sharedLink}`,
-            );
+          // Handle single or multiple links
+          const links = Array.isArray(sharedLink) ? sharedLink : [sharedLink];
+          const results: Array<{
+            success: boolean;
+            viewName?: string;
+            displayName?: string;
+            error?: string;
+            link: string;
+          }> = [];
 
-            const message = await gsheetToDuckdb({
-              dbPath,
-              sharedLink,
-              viewName: record.viewName,
-            });
+          // Process sequentially to avoid race conditions
+          for (const link of links) {
+            try {
+              const result = await withRetry(
+                async () => {
+                  // Check if view already exists
+                  const existing = await loadViewRegistry(context);
+                  const sourceId = link.match(
+                    /https:\/\/docs\.google\.com\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/,
+                  )?.[1];
+                  const existingRecord = sourceId
+                    ? existing.find((rec) => rec.sourceId === sourceId)
+                    : null;
 
-            // Extract schema and build business context
-            const schema = await extractSchema({
-              dbPath,
-              viewName: record.viewName,
-            });
-            await analyzeSchemaAndUpdateContext(fileDir, record.viewName, schema);
+                  if (existingRecord) {
+                    // Validate view exists in database
+                    const exists = await validateTableExists(
+                      dbPath,
+                      existingRecord.viewName,
+                    );
+                    if (!exists) {
+                      // View in registry but not in DB - recreate it
+                      console.debug(
+                        `[ReadDataAgent:${conversationId}] View in registry but missing in DB, recreating: ${existingRecord.viewName}`,
+                      );
+                      await gsheetToDuckdb({
+                        dbPath,
+                        sharedLink: link,
+                        viewName: existingRecord.viewName,
+                      });
+                      // Validate it was created
+                      const recreated = await validateTableExists(
+                        dbPath,
+                        existingRecord.viewName,
+                      );
+                      if (!recreated) {
+                        throw new Error(
+                          'Failed to recreate view in database',
+                        );
+                      }
+                    }
 
+                    return {
+                      viewName: existingRecord.viewName,
+                      displayName:
+                        existingRecord.displayName || existingRecord.viewName,
+                      sharedLink: existingRecord.sharedLink,
+                    };
+                  }
+
+                  // Generate unique temp table name
+                  const tempViewName = `temp_${Date.now()}_${Math.random()
+                    .toString(36)
+                    .substring(2, 8)}`;
+
+                  let finalViewName: string | null = null;
+
+                  try {
+                    // Step 1: Create temp view in database
+                    console.debug(
+                      `[ReadDataAgent:${conversationId}] Creating DuckDB view from sheet: ${link}`,
+                    );
+
+                    await gsheetToDuckdb({
+                      dbPath,
+                      sharedLink: link,
+                      viewName: tempViewName,
+                    });
+
+                    // Step 2: Validate temp view exists BEFORE proceeding
+                    const tempExists = await validateTableExists(
+                      dbPath,
+                      tempViewName,
+                    );
+                    if (!tempExists) {
+                      throw new Error(
+                        'Failed to create temp view in database - view does not exist after creation',
+                      );
+                    }
+
+                    // Step 3: Extract schema from temp view to generate semantic name
+                    // Allow temp tables during creation process
+                    const schema = await extractSchema({
+                      dbPath,
+                      viewName: tempViewName,
+                      allowTempTables: true,
+                    });
+
+                    // Step 4: Generate semantic name
+                    const existingNames = existing.map((r) => r.viewName);
+                    const semanticName = generateSemanticViewName(
+                      schema,
+                      existingNames,
+                    );
+                    const displayName = semanticName;
+
+                    // Step 5: Create final view from temp table (atomic operation)
+                    finalViewName = semanticName;
+                    await createViewFromTable(dbPath, finalViewName, tempViewName);
+
+                    // Step 6: Validate final view exists
+                    const finalExists = await validateTableExists(
+                      dbPath,
+                      finalViewName,
+                    );
+                    if (!finalExists) {
+                      throw new Error(
+                        'Failed to create final view - view does not exist after creation',
+                      );
+                    }
+
+                    // Step 7: Drop temp table (cleanup)
+                    await dropTable(dbPath, tempViewName);
+
+                    // Step 8: Register view AFTER successful creation
+                    const { record } = await registerSheetView(
+                      context,
+                      link,
+                      finalViewName,
+                      displayName,
+                      schema,
+                    );
+
+                    // Step 9: Build business context from FINAL view only
+                    const finalSchema = await extractSchema({
+                      dbPath,
+                      viewName: finalViewName,
+                    });
+                    await analyzeSchemaAndUpdateContext(
+                      fileDir,
+                      finalViewName,
+                      finalSchema,
+                      dbPath,
+                    );
+
+                    return {
+                      viewName: finalViewName,
+                      displayName,
+                      sharedLink: record.sharedLink,
+                    };
+                  } catch (error) {
+                    // Cleanup on failure
+                    try {
+                      if (tempViewName) await dropTable(dbPath, tempViewName);
+                      if (finalViewName) await dropTable(dbPath, finalViewName);
+                    } catch (cleanupError) {
+                      console.warn(
+                        '[ReadDataAgent] Cleanup failed:',
+                        cleanupError,
+                      );
+                    }
+                    throw error;
+                  }
+                },
+                {
+                  maxRetries: 3,
+                  retryDelay: 200,
+                  shouldRetry: (error) => {
+                    const errorMsg = error.message;
+                    // Retry on "does not exist" errors (might be timing issue)
+                    return (
+                      errorMsg.includes('does not exist') ||
+                      errorMsg.includes('Catalog Error') ||
+                      errorMsg.includes('Catalog')
+                    );
+                  },
+                },
+              );
+
+              results.push({
+                success: true,
+                viewName: result.viewName,
+                displayName: result.displayName,
+                link,
+              });
+            } catch (error) {
+              const errorMessage = formatViewCreationError(
+                error as Error,
+                link,
+              );
+              results.push({
+                success: false,
+                error: errorMessage,
+                link,
+              });
+            }
+          }
+
+          // Invalidate cache
+          cachedViews = null;
+
+          const successful = results.filter((r) => r.success);
+          const failed = results.filter((r) => !r.success);
+
+          if (failed.length > 0) {
+            // Return partial success with error details
             return {
-              content: message,
-              viewName: record.viewName,
-              sharedLink: record.sharedLink,
-            };
-          } else {
-            console.debug(
-              `[ReadDataAgent:${conversationId}] View already exists, skipping recreation: ${record.viewName}`,
-            );
-            return {
-              content: `View '${record.viewName}' already exists in the registry. Use listViews to see all available views, then use the viewName directly in queries.`,
-              viewName: record.viewName,
-              sharedLink: record.sharedLink,
+              content:
+                `Successfully created ${successful.length} view(s). ` +
+                `Failed to create ${failed.length} view(s): ${failed
+                  .map((f) => f.error)
+                  .join('; ')}`,
+              views: successful.map((r) => ({
+                viewName: r.viewName!,
+                displayName: r.displayName!,
+                sharedLink: r.link,
+              })),
+              errors: failed.map((f) => ({
+                sharedLink: f.link,
+                error: f.error,
+              })),
             };
           }
+
+          return {
+            content: `Successfully created ${successful.length} view(s) from Google Sheets.`,
+            views: successful.map((r) => ({
+              viewName: r.viewName!,
+              displayName: r.displayName!,
+              sharedLink: r.link,
+            })),
+          };
         },
       }),
       listViews: tool({
@@ -184,40 +400,106 @@ export const readDataAgent = async (
           const { join } = await import('node:path');
           const dbPath = join(workspace, conversationId, 'database.db');
           const fileDir = join(workspace, conversationId);
+          const context: RegistryContext = {
+            conversationDir: fileDir,
+          };
 
-          const schema = await extractSchema({ dbPath, viewName });
+          // Use cached views if available
+          const views = cachedViews || await loadViewRegistry(context);
 
-          // Update business context if a specific view is requested
+          // Validate viewName exists if provided
           if (viewName) {
-            await analyzeSchemaAndUpdateContext(fileDir, viewName, schema);
-          } else {
-            // If no viewName, update context for all views
-            for (const table of schema.tables) {
-              await analyzeSchemaAndUpdateContext(fileDir, table.tableName, {
-                ...schema,
-                tables: [table],
-              });
+            const viewNameToCheck = viewName;
+            const view = views.find(
+              (v) => v.viewName === viewNameToCheck || v.displayName === viewNameToCheck,
+            );
+
+            if (!view) {
+              // Try to find similar names
+              const viewNameLower = viewNameToCheck.toLowerCase();
+              const suggestions = views
+                .filter((v) =>
+                  v.viewName.toLowerCase().includes(viewNameLower) ||
+                  v.displayName?.toLowerCase().includes(viewNameLower),
+                )
+                .map((v) => v.displayName || v.viewName)
+                .slice(0, 3);
+
+              throw new Error(
+                `View "${viewName}" not found. ${
+                  suggestions.length > 0
+                    ? `Did you mean: ${suggestions.join(', ')}?`
+                    : `Available views: ${views.map((v) => v.displayName || v.viewName).join(', ')}`
+                }`,
+              );
             }
+
+            // Validate view exists in database
+            const exists = await validateViewExists(dbPath, view.viewName);
+            if (!exists) {
+              throw new Error(
+                `View "${viewName}" exists in registry but not in database. Please recreate the view.`,
+              );
+            }
+
+            // Use the actual viewName from registry
+            viewName = view.viewName;
           }
 
-          // Load and include business context in response
-          const businessContext = await loadBusinessContext(fileDir);
+          // Get performance configuration
+          const perfConfig = await getConfig(fileDir);
+
+          let schema: SimpleSchema;
+          let schemasMap: Map<string, SimpleSchema>;
+
+          if (viewName) {
+            // Single view - extract schema
+            schema = await extractSchema({ dbPath, viewName });
+            schemasMap = new Map([[viewName, schema]]);
+          } else {
+            // All views - extract schemas in parallel
+            const allViewNames = views.map((v) => v.viewName);
+            schemasMap = await extractSchemasParallel(
+              dbPath,
+              allViewNames,
+              perfConfig.enableBatchProcessing ? 4 : 1,
+            );
+            // Use first schema for backward compatibility
+            schema = schemasMap.values().next().value || {
+              databaseName: 'google_sheet',
+              schemaName: 'google_sheet',
+              tables: [],
+            };
+          }
+
+          // Update business context - use parallel processing for multiple views
+          if (viewName) {
+            await analyzeSchemaAndUpdateContext(fileDir, viewName, schema, dbPath);
+          } else {
+            // PARALLEL: Update context for all views at once
+            await analyzeSchemasAndUpdateContextParallel(fileDir, schemasMap, dbPath);
+          }
+
+          // LAZY: Use lazy loader to get only what's needed
+          const loader = new LazyBusinessContextLoader(perfConfig, fileDir, dbPath);
+          const businessContext = await loader.getFullContext();
+
+          // Get entities, relationships, and vocabulary (lazy loaded if enabled)
+          const entities = await loader.getEntities(viewName);
+          const relationships = await loader.getRelationships(viewName);
+          const vocabulary = await loader.getVocabulary();
 
           return {
             schema: schema,
             businessContext: businessContext
               ? {
                   domain: businessContext.domain,
-                  entities: Array.from(businessContext.entities.values()).slice(
-                    0,
-                    10,
-                  ), // Limit for response size
-                  relationships: businessContext.relationships.slice(0, 10),
+                  entities: entities.slice(0, perfConfig.expectedViewCount * 2), // Limit based on config
+                  relationships: relationships.slice(0, perfConfig.expectedViewCount * 3),
                   vocabulary: Object.fromEntries(
-                    Array.from(businessContext.vocabulary.entries()).slice(
-                      0,
-                      20,
-                    ),
+                    Array.from(vocabulary.entries())
+                      .slice(0, perfConfig.expectedViewCount * 10) // Limit based on config
+                      .map(([key, entry]) => [key, entry]),
                   ),
                 }
               : null,

@@ -3,6 +3,7 @@ import type { SimpleSchema, Table, Column } from '@qwery/domain/entities';
 export interface ExtractSchemaOptions {
   dbPath: string;
   viewName?: string;
+  allowTempTables?: boolean; // Allow temp tables during creation process
 }
 
 export const extractSchema = async (
@@ -12,7 +13,22 @@ export const extractSchema = async (
   const instance = await DuckDBInstance.create(opts.dbPath);
   const conn = await instance.connect();
 
+  // Import validation function
+  const { isSystemOrTempTable, validateTableExists } = await import('./view-registry');
+
   try {
+    // Validate view exists and is not temp if viewName is provided
+    // But allow temp tables during creation process (allowTempTables = true)
+    if (opts.viewName) {
+      if (!opts.allowTempTables && isSystemOrTempTable(opts.viewName)) {
+        throw new Error(`Cannot extract schema from system/temp table: ${opts.viewName}`);
+      }
+
+      const exists = await validateTableExists(opts.dbPath, opts.viewName);
+      if (!exists) {
+        throw new Error(`View '${opts.viewName}' does not exist in database`);
+      }
+    }
     // If no viewName specified, get all views
     if (!opts.viewName) {
       const viewsReader = await conn.runAndReadAll(`
@@ -29,40 +45,19 @@ export const extractSchema = async (
         table_name: string;
       }>;
 
-      // Filter out known system views - only return views that look like user-created views
-      // User-created views typically don't start with system prefixes and are simple names
-      const systemViewPrefixes = [
-        'pg_',
-        'sqlite_',
-        'information_schema',
-        'duckdb_',
-        'main.',
-        'temp.',
-        'pg_catalog',
-        'pg_toast',
-      ];
+      // Import validation function
+      const { isSystemOrTempTable } = await import('./view-registry');
+
+      // Filter out known system views and temp tables - only return views that look like user-created views
       const views = allViews.filter((v) => {
-        const name = v.table_name.toLowerCase();
-        // Exclude system views
-        if (systemViewPrefixes.some((prefix) => name.startsWith(prefix))) {
+        const name = v.table_name;
+        // Exclude system/temp tables
+        if (isSystemOrTempTable(name)) {
           return false;
         }
         // Exclude views with dots (schema-qualified) or special characters
-        if (name.includes('.') || name.includes('$') || name.includes('#')) {
-          return false;
-        }
-        // Exclude views that are clearly system/internal (check for common patterns)
-        const systemPatterns = [
-          /^pg_/,
-          /^sqlite_/,
-          /^duckdb_/,
-          /^information_schema/,
-          /^main\./,
-          /^temp\./,
-          /^pg_catalog/,
-          /^pg_toast/,
-        ];
-        if (systemPatterns.some((pattern) => pattern.test(name))) {
+        const nameLower = name.toLowerCase();
+        if (nameLower.includes('.') || nameLower.includes('$') || nameLower.includes('#')) {
           return false;
         }
         return true;
@@ -132,3 +127,27 @@ export const extractSchema = async (
     instance.closeSync();
   }
 };
+
+/**
+ * Extract schemas for multiple views in parallel
+ */
+export async function extractSchemasParallel(
+  dbPath: string,
+  viewNames: string[],
+  concurrency: number = 4,
+): Promise<Map<string, SimpleSchema>> {
+  const { processWithConcurrency } = await import(
+    '../services/business-context.service'
+  );
+
+  const schemas = await processWithConcurrency(
+    viewNames,
+    async (viewName) => {
+      const schema = await extractSchema({ dbPath, viewName });
+      return [viewName, schema] as [string, SimpleSchema];
+    },
+    concurrency,
+  );
+
+  return new Map(schemas);
+}
