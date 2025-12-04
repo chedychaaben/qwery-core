@@ -163,3 +163,12 @@ qwery-db-*
 packages/agent-factory-sdk/workspace/
 apps/cli/workspace/
 apps/web/workspace/
+
+# Test files (temporary test scripts)
+test-*.txt
+test-*.ts
+test-*.js
+test-*.mjs
+test-*.sh
+test-*.log
+packages/agent-factory-sdk/test-business-context/

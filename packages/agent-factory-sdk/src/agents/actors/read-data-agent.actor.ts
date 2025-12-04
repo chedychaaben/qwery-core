@@ -74,7 +74,7 @@ export const readDataAgent = async (
         },
       }),
       createDbViewFromSheet: tool({
-        description: 'Create a View from a Google Sheet',
+        description: 'Create a View from a Google Sheet. IMPORTANT: Only use this when the user explicitly provides a NEW Google Sheet URL that is not already in the registry. Always call listViews first to check if the sheet already exists.',
         inputSchema: z.object({
           sharedLink: z.string(),
         }),
@@ -89,10 +89,6 @@ export const readDataAgent = async (
           await mkdir(fileDir, { recursive: true });
           const dbPath = join(fileDir, 'database.db');
 
-          console.debug(
-            `[ReadDataAgent:${conversationId}] Creating DuckDB view from sheet: ${sharedLink}`,
-          );
-
           // Register the sheet view to get a unique view name
           const context: RegistryContext = {
             conversationDir: fileDir,
@@ -102,21 +98,40 @@ export const readDataAgent = async (
             sharedLink,
           );
 
-          const message = await gsheetToDuckdb({
-            dbPath,
-            sharedLink,
-            viewName: record.viewName,
-          });
+          // Only recreate the view if it's new, otherwise just return existing info
+          if (isNew) {
+            console.debug(
+              `[ReadDataAgent:${conversationId}] Creating DuckDB view from sheet: ${sharedLink}`,
+            );
 
-          // Extract schema and build business context
-          const schema = await extractSchema({ dbPath, viewName: record.viewName });
-          await analyzeSchemaAndUpdateContext(fileDir, record.viewName, schema);
+            const message = await gsheetToDuckdb({
+              dbPath,
+              sharedLink,
+              viewName: record.viewName,
+            });
 
-          return {
-            content: `${message}${isNew ? '' : ' (view already existed, updated)'}`,
-            viewName: record.viewName,
-            sharedLink: record.sharedLink,
-          };
+            // Extract schema and build business context
+            const schema = await extractSchema({
+              dbPath,
+              viewName: record.viewName,
+            });
+            await analyzeSchemaAndUpdateContext(fileDir, record.viewName, schema);
+
+            return {
+              content: message,
+              viewName: record.viewName,
+              sharedLink: record.sharedLink,
+            };
+          } else {
+            console.debug(
+              `[ReadDataAgent:${conversationId}] View already exists, skipping recreation: ${record.viewName}`,
+            );
+            return {
+              content: `View '${record.viewName}' already exists in the registry. Use listViews to see all available views, then use the viewName directly in queries.`,
+              viewName: record.viewName,
+              sharedLink: record.sharedLink,
+            };
+          }
         },
       }),
       listViews: tool({
@@ -159,7 +174,7 @@ export const readDataAgent = async (
           const fileDir = join(WORKSPACE, conversationId);
 
           const schema = await extractSchema({ dbPath, viewName });
-          
+
           // Update business context if a specific view is requested
           if (viewName) {
             await analyzeSchemaAndUpdateContext(fileDir, viewName, schema);
@@ -172,19 +187,25 @@ export const readDataAgent = async (
               });
             }
           }
-          
+
           // Load and include business context in response
           const businessContext = await loadBusinessContext(fileDir);
-          
+
           return {
             schema: schema,
             businessContext: businessContext
               ? {
                   domain: businessContext.domain,
-                  entities: Array.from(businessContext.entities.values()).slice(0, 10), // Limit for response size
+                  entities: Array.from(businessContext.entities.values()).slice(
+                    0,
+                    10,
+                  ), // Limit for response size
                   relationships: businessContext.relationships.slice(0, 10),
                   vocabulary: Object.fromEntries(
-                    Array.from(businessContext.vocabulary.entries()).slice(0, 20),
+                    Array.from(businessContext.vocabulary.entries()).slice(
+                      0,
+                      20,
+                    ),
                   ),
                 }
               : null,
