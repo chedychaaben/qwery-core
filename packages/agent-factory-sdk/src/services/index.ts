@@ -7,3 +7,5 @@ export * from './message-persistence.service';
 export * from './browser-transport';
 export * from './transport-factory';
 export * from './usage-persistence.service';
+export * from './generate-conversation-title.service';
+export * from './generate-sheet-name.service';

@@ -12,6 +12,7 @@ import {
   CreateConversationInput,
   UpdateConversationInput,
 } from '@qwery/domain/usecases';
+import { getConversationsKey } from '../queries/use-get-conversations';
 
 export function getConversationKey(slug: string) {
   return ['conversation', slug];

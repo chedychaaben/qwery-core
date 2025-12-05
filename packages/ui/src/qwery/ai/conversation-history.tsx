@@ -18,7 +18,20 @@ import {
   Pencil,
   Check,
   X,
+  Edit,
+  Trash2,
 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../../shadcn/alert-dialog';
+import { Checkbox } from '../../shadcn/checkbox';
 
 export interface Conversation {
   id: string;
@@ -35,6 +48,7 @@ export interface ConversationHistoryProps {
   onNewConversation?: () => void;
   onConversationEdit?: (conversationId: string, newTitle: string) => void;
   onConversationDelete?: (conversationId: string) => void;
+  onConversationsDelete?: (conversationIds: string[]) => void;
 }
 
 function formatRelativeTime(date: Date): string {
@@ -48,7 +62,7 @@ function formatRelativeTime(date: Date): string {
   if (diffDays === 1) {
     return 'Yesterday';
   }
-  
+
   const day = date.getDate();
   const month = date.toLocaleDateString('en-US', { month: 'long' });
   const year = date.getFullYear();
@@ -83,16 +97,16 @@ function sortTimeGroups(groups: Record<string, Conversation[]>): string[] {
   return keys.sort((a, b) => {
     if (a === 'Today') return -1;
     if (b === 'Today') return 1;
-    
+
     if (a === 'Yesterday') return -1;
     if (b === 'Yesterday') return 1;
     const dateA = parseDateString(a);
     const dateB = parseDateString(b);
-    
+
     if (dateA && dateB) {
       return dateB.getTime() - dateA.getTime();
     }
-    
+
     return a.localeCompare(b);
   });
 }
@@ -103,7 +117,7 @@ function parseDateString(dateStr: string): Date | null {
     const day = parseInt(parts[0], 10);
     const monthName = parts[1];
     const year = parseInt(parts[2], 10);
-    
+
     if (!isNaN(day) && !isNaN(year) && monthName) {
       const monthIndex = new Date(`${monthName} 1, 2000`).getMonth();
       if (!isNaN(monthIndex)) {
@@ -122,11 +136,17 @@ export function ConversationHistory({
   onNewConversation,
   onConversationEdit,
   onConversationDelete,
+  onConversationsDelete,
 }: ConversationHistoryProps) {
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
+  const [animatingIds, setAnimatingIds] = useState<Set<string>>(new Set());
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const editInputRef = useRef<HTMLInputElement>(null);
+  const previousTitlesRef = useRef<Map<string, string>>(new Map());
 
   const groupedConversations = useMemo(() => {
     return groupConversationsByTime(conversations);
@@ -137,13 +157,64 @@ export function ConversationHistory({
   }, [groupedConversations]);
 
   const handleConversationSelect = (conversationSlug: string) => {
-    onConversationSelect?.(conversationSlug);
-    setOpen(false);
+    if (!isEditMode) {
+      onConversationSelect?.(conversationSlug);
+      setOpen(false);
+    }
   };
 
   const handleNewConversation = () => {
     onNewConversation?.();
     setOpen(false);
+  };
+
+  const handleToggleEditMode = () => {
+    setIsEditMode(!isEditMode);
+    if (isEditMode) {
+      setSelectedIds(new Set());
+    }
+  };
+
+  const handleToggleSelect = (conversationId: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(conversationId)) {
+        next.delete(conversationId);
+      } else {
+        next.add(conversationId);
+      }
+      return next;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedIds.size === conversations.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(conversations.map((c) => c.id)));
+    }
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedIds.size === 0) return;
+    setShowDeleteDialog(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (onConversationsDelete && selectedIds.size > 0) {
+      onConversationsDelete(Array.from(selectedIds));
+      setSelectedIds(new Set());
+      setIsEditMode(false);
+      setShowDeleteDialog(false);
+    } else if (onConversationDelete && selectedIds.size === 1) {
+      const id = Array.from(selectedIds)[0];
+      if (id) {
+        onConversationDelete(id);
+        setSelectedIds(new Set());
+        setIsEditMode(false);
+        setShowDeleteDialog(false);
+      }
+    }
   };
 
   const handleStartEdit = (conversationId: string, currentTitle: string) => {
@@ -154,8 +225,12 @@ export function ConversationHistory({
   const handleSaveEdit = (conversationId: string) => {
     const trimmedValue = editValue.trim();
     const currentTitle = conversations.find(c => c.id === conversationId)?.title;
-    
-    if (trimmedValue && trimmedValue !== currentTitle) {
+
+    if (!trimmedValue || trimmedValue.length < 1) {
+      return;
+    }
+
+    if (trimmedValue !== currentTitle) {
       onConversationEdit?.(conversationId, trimmedValue);
     }
     setEditingId(null);
@@ -173,6 +248,29 @@ export function ConversationHistory({
       editInputRef.current.select();
     }
   }, [editingId]);
+
+  // Detect title changes and trigger animation
+  useEffect(() => {
+    conversations.forEach((conversation) => {
+      const previousTitle = previousTitlesRef.current.get(conversation.id);
+      const currentTitle = conversation.title;
+
+      if (previousTitle && previousTitle !== currentTitle) {
+        // Trigger animation
+        setAnimatingIds((prev) => new Set(prev).add(conversation.id));
+        // Remove animation after it completes
+        setTimeout(() => {
+          setAnimatingIds((prev) => {
+            const next = new Set(prev);
+            next.delete(conversation.id);
+            return next;
+          });
+        }, 1000);
+      }
+
+      previousTitlesRef.current.set(conversation.id, currentTitle);
+    });
+  }, [conversations]);
 
   return (
     <>
@@ -194,15 +292,49 @@ export function ConversationHistory({
         </div>
         <div className="mb-3 border-b flex items-center gap-2 p-2 [&_[cmdk-input-wrapper]]:border-0 [&_[cmdk-input-wrapper]]:flex-1 [&_[cmdk-input-wrapper]]:min-w-0">
           <CommandInput placeholder="Search conversations..." />
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleNewConversation}
-            className="gap-1.5 shrink-0"
-          >
-            <Plus className="size-3.5" />
-            New
-          </Button>
+          {isEditMode ? (
+            <>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={handleDeleteSelected}
+                className="gap-1.5 shrink-0"
+                disabled={selectedIds.size === 0}
+              >
+                <Trash2 className="size-3.5" />
+                Delete {selectedIds.size > 0 && `(${selectedIds.size})`}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleToggleEditMode}
+                className="gap-1.5 shrink-0"
+              >
+                Cancel
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleNewConversation}
+                className="gap-1.5 shrink-0"
+              >
+                <Plus className="size-3.5" />
+                New
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleToggleEditMode}
+                className="gap-1.5 shrink-0"
+              >
+                <Edit className="size-3.5" />
+                Edit
+              </Button>
+            </>
+          )}
         </div>
         <CommandList className="max-h-[500px]">
           <CommandEmpty>
@@ -235,112 +367,180 @@ export function ConversationHistory({
                   <div className="bg-border h-px flex-1" />
                 </div>
                 <CommandGroup heading="">
-                {groupConversations.map((conversation) => {
-                  const isCurrent = conversation.id === currentConversationId;
-                  const isEditing = editingId === conversation.id;
-                  
-                  return (
-                    <CommandItem
-                      key={conversation.id}
-                      value={conversation.id}
-                      onSelect={() => {
-                        if (!isEditing) {
-                          handleConversationSelect(conversation.slug);
-                        }
-                      }}
-                      className={cn(
-                        'group relative mx-2 my-0.5 rounded-md transition-all',
-                        'hover:bg-accent/50',
-                        isCurrent &&
-                          'bg-primary/10 border border-primary/20',
-                        'data-[selected=true]:bg-accent',
-                      )}
-                    >
-                      <div className="flex w-full items-center gap-2 px-2 py-1.5">
-                        <div
-                          className={cn(
-                            'flex size-6 shrink-0 items-center justify-center rounded transition-colors',
-                            isCurrent
-                              ? 'bg-primary/20 text-primary'
-                              : 'bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary',
-                          )}
-                        >
-                          <MessageCircle className="size-3" />
-                        </div>
-                        {isEditing ? (
-                          <div className="flex min-w-0 flex-1 items-center gap-1.5">
-                            <input
-                              ref={editInputRef}
-                              type="text"
-                              value={editValue}
-                              onChange={(e) => setEditValue(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  handleSaveEdit(conversation.id);
-                                } else if (e.key === 'Escape') {
-                                  handleCancelEdit();
-                                }
-                              }}
-                              onClick={(e) => e.stopPropagation()}
-                              className="flex-1 bg-background border border-input rounded px-2 py-1 text-sm outline-none focus:ring-1 focus:ring-ring"
-                            />
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleSaveEdit(conversation.id);
-                              }}
-                              className="text-primary hover:bg-accent rounded p-1 transition-colors"
-                            >
-                              <Check className="size-3.5" />
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleCancelEdit();
-                              }}
-                              className="text-muted-foreground hover:bg-accent rounded p-1 transition-colors"
-                            >
-                              <X className="size-3.5" />
-                            </button>
-                          </div>
-                        ) : (
-                          <>
-                            <div className="flex min-w-0 flex-1 items-center">
-                              <span
+                  {groupConversations.map((conversation) => {
+                    const isCurrent = conversation.id === currentConversationId;
+                    const isEditing = editingId === conversation.id;
+                    const isSelected = selectedIds.has(conversation.id);
+
+                    return (
+                      <CommandItem
+                        key={conversation.id}
+                        value={conversation.id}
+                        onSelect={() => {
+                          if (isEditMode) {
+                            handleToggleSelect(conversation.id);
+                          } else if (!isEditing) {
+                            handleConversationSelect(conversation.slug);
+                          }
+                        }}
+                        className={cn(
+                          'group relative mx-2 my-0.5 rounded-md transition-all border',
+                          'border-border/50 hover:border-border hover:bg-accent/50',
+                          isCurrent &&
+                          'bg-primary/10 border-primary/20 hover:border-primary/30',
+                          isEditMode && isSelected && 'border-primary bg-primary/5 hover:border-primary/80',
+                          isEditMode && !isSelected && 'border-border/50 hover:border-border',
+                          'data-[selected=true]:bg-accent',
+                        )}
+                      >
+                        <div className="flex w-full items-center gap-2 px-2 py-1.5">
+                          <div className="flex size-6 shrink-0 items-center justify-center">
+                            {isEditMode ? (
+                              <Checkbox
+                                checked={isSelected}
+                                onCheckedChange={() => handleToggleSelect(conversation.id)}
+                                onClick={(e) => e.stopPropagation()}
+                                className="size-4 shrink-0"
+                              />
+                            ) : (
+                              <div
                                 className={cn(
-                                  'truncate text-sm font-medium',
-                                  isCurrent && 'text-primary',
+                                  'flex size-6 items-center justify-center rounded transition-colors',
+                                  isCurrent
+                                    ? 'bg-primary/20 text-primary'
+                                    : 'bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary',
                                 )}
                               >
-                                {conversation.title}
-                              </span>
-                            </div>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleStartEdit(conversation.id, conversation.title);
-                              }}
-                              className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground hover:bg-accent rounded p-1 transition-all shrink-0"
-                            >
-                              <Pencil className="size-3" />
-                            </button>
-                            {isCurrent && (
-                              <div className="flex shrink-0 items-center">
-                                <div className="bg-primary size-1.5 rounded-full" />
+                                <MessageCircle className="size-3" />
                               </div>
                             )}
-                          </>
-                        )}
-                      </div>
-                    </CommandItem>
-                  );
-                })}
+                          </div>
+                          {isEditing ? (
+                            <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                              <input
+                                ref={editInputRef}
+                                type="text"
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    handleSaveEdit(conversation.id);
+                                  } else if (e.key === 'Escape') {
+                                    handleCancelEdit();
+                                  }
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                                className={cn(
+                                  'flex-1 bg-background border rounded px-2 py-1 text-sm outline-none focus:ring-1',
+                                  editValue.trim().length < 1
+                                    ? 'border-destructive focus:ring-destructive'
+                                    : 'border-input focus:ring-ring',
+                                )}
+                                minLength={1}
+                                required
+                              />
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSaveEdit(conversation.id);
+                                }}
+                                disabled={editValue.trim().length < 1}
+                                className={cn(
+                                  'rounded p-1 transition-colors',
+                                  editValue.trim().length < 1
+                                    ? 'text-muted-foreground cursor-not-allowed opacity-50'
+                                    : 'text-primary hover:bg-accent',
+                                )}
+                              >
+                                <Check className="size-3.5" />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCancelEdit();
+                                }}
+                                className="text-muted-foreground hover:bg-accent rounded p-1 transition-colors"
+                              >
+                                <X className="size-3.5" />
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="flex min-w-0 flex-1 items-center">
+                                <span
+                                  className={cn(
+                                    'truncate text-sm font-medium transition-all duration-300',
+                                    isCurrent && 'text-primary',
+                                    animatingIds.has(conversation.id) &&
+                                    'animate-in fade-in-0 slide-in-from-left-2 text-primary',
+                                  )}
+                                >
+                                  {conversation.title}
+                                </span>
+                              </div>
+                              {!isEditMode && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleStartEdit(conversation.id, conversation.title);
+                                  }}
+                                  className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground hover:bg-accent rounded p-1 transition-all shrink-0"
+                                >
+                                  <Pencil className="size-3" />
+                                </button>
+                              )}
+                              {isCurrent && (
+                                <div className="flex shrink-0 items-center">
+                                  <div className="bg-primary size-1.5 rounded-full" />
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </CommandItem>
+                    );
+                  })}
                 </CommandGroup>
               </div>
             );
           })}
         </CommandList>
       </CommandDialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Delete {selectedIds.size === 1 ? 'conversation' : 'conversations'}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {selectedIds.size === 1 ? (
+                <>
+                  Are you sure you want to delete this conversation? This action
+                  cannot be undone and will permanently remove the conversation
+                  and all its messages.
+                </>
+              ) : (
+                <>
+                  Are you sure you want to delete {selectedIds.size} conversations?
+                  This action cannot be undone and will permanently remove these
+                  conversations and all their messages.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

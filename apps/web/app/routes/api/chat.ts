@@ -4,22 +4,18 @@ import {
   FactoryAgent,
   validateUIMessages,
 } from '@qwery/agent-factory-sdk';
-import {} from '@qwery/agent-factory-sdk';
+import { generateConversationTitle } from '@qwery/agent-factory-sdk';
+import { MessageRole } from '@qwery/domain/entities';
 import { createRepositories } from '~/lib/repositories/repositories-factory';
 import { handleDomainException } from '~/lib/utils/error-handler';
 
-// Map to persist manager agent instances by conversation slug
 const agents = new Map<string, FactoryAgent>();
-// Track last access time for cleanup
 const agentLastAccess = new Map<string, number>();
-// Lock map to prevent race conditions during agent creation
 const agentCreationLocks = new Map<string, Promise<FactoryAgent>>();
 
-// Cleanup interval: remove agents inactive for 30 minutes
-const AGENT_INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes
-const CLEANUP_INTERVAL = 5 * 60 * 1000; // Run cleanup every 5 minutes
+const AGENT_INACTIVITY_TIMEOUT = 30 * 60 * 1000;
+const CLEANUP_INTERVAL = 5 * 60 * 1000;
 
-// Start cleanup interval
 if (typeof setInterval !== 'undefined') {
   setInterval(() => {
     const now = Date.now();
@@ -27,7 +23,6 @@ if (typeof setInterval !== 'undefined') {
       if (now - lastAccess > AGENT_INACTIVITY_TIMEOUT) {
         const agent = agents.get(slug);
         if (agent) {
-          // Stop the actor to clean up resources
           try {
             (agent as any).factoryActor?.stop();
           } catch (error) {
@@ -48,23 +43,19 @@ const repositories = await createRepositories();
 async function getOrCreateAgent(
   conversationSlug: string,
 ): Promise<FactoryAgent> {
-  // Check if agent already exists
   let agent = agents.get(conversationSlug);
   if (agent) {
     agentLastAccess.set(conversationSlug, Date.now());
     return agent;
   }
 
-  // Check if agent is being created (prevent race conditions)
   const existingLock = agentCreationLocks.get(conversationSlug);
   if (existingLock) {
     return existingLock;
   }
 
-  // Create new agent with lock
   const creationPromise = (async () => {
     try {
-      // Validate conversation exists before creating agent
       const conversation = await repositories.conversation.findBySlug(
         conversationSlug,
       );
@@ -74,7 +65,6 @@ async function getOrCreateAgent(
         );
       }
 
-      // Create agent using factory method (resolves slug to ID)
       agent = await FactoryAgent.create({
         conversationSlug: conversationSlug,
         repositories: repositories,
@@ -111,7 +101,48 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const messages: UIMessage[] = body.messages;
 
   try {
-    // Get or create manager agent for this conversation
+    // Check if this is the first user message and title needs to be generated
+    const conversation = await repositories.conversation.findBySlug(
+      conversationSlug,
+    );
+    
+    if (conversation && conversation.title === 'New Conversation') {
+      const existingMessages = await repositories.message.findByConversationId(
+        conversation.id,
+      );
+      const userMessages = existingMessages.filter(
+        (msg) => msg.role === MessageRole.USER,
+      );
+
+      if (userMessages.length === 0) {
+        const firstUserMessage = messages.find((msg) => msg.role === 'user');
+        if (firstUserMessage) {
+          const textParts = firstUserMessage.parts
+            ?.filter((part) => part.type === 'text')
+            .map((part) => (part as { text: string }).text)
+            .join(' ')
+            .trim();
+
+          if (textParts && textParts.length > 0) {
+            generateConversationTitle(textParts)
+              .then((generatedTitle: string) => {
+                if (generatedTitle && generatedTitle !== 'New Conversation') {
+                  repositories.conversation.update({
+                    ...conversation,
+                    title: generatedTitle,
+                    updatedBy: conversation.createdBy,
+                    updatedAt: new Date(),
+                  });
+                }
+              })
+              .catch((error: unknown) => {
+                console.error('Failed to generate conversation title:', error);
+              });
+          }
+        }
+      }
+    }
+
     const agent = await getOrCreateAgent(conversationSlug);
 
     const streamResponse = await agent.respond({
@@ -122,7 +153,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
       return new Response(null, { status: 204 });
     }
 
-    // Create a ReadableStream that forwards chunks from the manager agent
     const stream = new ReadableStream({
       async start(controller) {
         const reader = streamResponse.body!.getReader();

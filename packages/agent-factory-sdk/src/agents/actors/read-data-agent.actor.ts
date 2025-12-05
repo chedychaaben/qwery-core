@@ -20,7 +20,10 @@ import { buildBusinessContext } from '../../tools/build-business-context';
 import { enhanceBusinessContextInBackground } from './enhance-business-context.actor';
 import type { Repositories } from '@qwery/domain/repositories';
 import { initializeDatasources } from '../../tools/datasource-initializer';
-import { GetConversationBySlugService } from '@qwery/domain/services';
+import {
+  GetConversationService,
+  GetConversationBySlugService,
+} from '@qwery/domain/services';
 import {
   loadDatasources,
   groupDatasourcesByType,
@@ -44,6 +47,7 @@ import {
   formatViewCreationError,
   type RegistryContext,
 } from '../../tools/view-registry';
+import { generateSheetName } from '../../services/generate-sheet-name.service';
 
 // Lazy workspace resolution - only resolve when actually needed, not at module load time
 // This prevents side effects when the module is imported in browser/SSR contexts
@@ -89,8 +93,8 @@ export const readDataAgent = async (
     if (workspace) {
       try {
         // Get conversation to find datasources
-        // Note: conversationId is actually a slug in this context
-        const getConversationService = new GetConversationBySlugService(
+        // conversationId is the actual conversation ID (UUID), not a slug
+        const getConversationService = new GetConversationService(
           repositories.conversation,
         );
         const conversation =
@@ -224,7 +228,7 @@ export const readDataAgent = async (
             // Re-attach foreign datasources for this connection (attachments are session-scoped)
             if (repositories) {
               try {
-                const getConversationService = new GetConversationBySlugService(
+                const getConversationService = new GetConversationService(
                   repositories.conversation,
                 );
                 const conversation =

@@ -126,16 +126,44 @@ export const ToolInput = ({ className, input, ...props }: ToolInputProps) => (
 export type ToolOutputProps = ComponentProps<'div'> & {
   output: ToolUIPart['output'];
   errorText: ToolUIPart['errorText'];
+  isTestConnection?: boolean;
 };
 
 export const ToolOutput = ({
   className,
   output,
   errorText,
+  isTestConnection = false,
   ...props
 }: ToolOutputProps) => {
   if (!(output || errorText)) {
     return null;
+  }
+
+  // Special handling for testConnection tool
+  if (isTestConnection && !errorText) {
+    const result = output === true || output === 'true' || String(output).toLowerCase() === 'true';
+    return (
+      <div className={cn('min-w-0 p-5', className)} {...props}>
+        <div className="flex items-center gap-3">
+          {result ? (
+            <>
+              <CheckCircleIcon className="size-5 text-emerald-600 shrink-0" />
+              <span className="text-sm font-medium text-emerald-600">
+                Connection successful
+              </span>
+            </>
+          ) : (
+            <>
+              <XCircleIcon className="size-5 text-destructive shrink-0" />
+              <span className="text-sm font-medium text-destructive">
+                Connection failed
+              </span>
+            </>
+          )}
+        </div>
+      </div>
+    );
   }
 
   let Output = <div>{output as ReactNode}</div>;
