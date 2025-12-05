@@ -1,4 +1,9 @@
-import type { BusinessContext, BusinessEntity, VocabularyEntry, ViewMetadata } from '../types/business-context.types';
+import type {
+  BusinessContext,
+  BusinessEntity,
+  VocabularyEntry,
+  ViewMetadata,
+} from '../types/business-context.types';
 
 const BUSINESS_CONTEXT_FILE = 'business-context.json';
 
@@ -11,7 +16,12 @@ export function createEmptyContext(): BusinessContext {
     vocabulary: new Map(),
     relationships: [],
     entityGraph: new Map(),
-    domain: { domain: 'general', confidence: 0.5, keywords: [], alternativeDomains: [] },
+    domain: {
+      domain: 'general',
+      confidence: 0.5,
+      keywords: [],
+      alternativeDomains: [],
+    },
     views: new Map(),
     updatedAt: new Date().toISOString(),
   };
@@ -69,7 +79,12 @@ export async function loadBusinessContext(
       vocabulary,
       relationships: data.relationships || [],
       entityGraph: new Map(data.entityGraph || []),
-      domain: data.domain || { domain: 'general', confidence: 0.5, keywords: [], alternativeDomains: [] },
+      domain: data.domain || {
+        domain: 'general',
+        confidence: 0.5,
+        keywords: [],
+        alternativeDomains: [],
+      },
       views,
       updatedAt: data.updatedAt || new Date().toISOString(),
     };
@@ -109,7 +124,9 @@ export async function saveBusinessContext(
  * Merge multiple business contexts into one
  * Used when processing multiple views to combine fast contexts
  */
-export function mergeBusinessContexts(contexts: BusinessContext[]): BusinessContext {
+export function mergeBusinessContexts(
+  contexts: BusinessContext[],
+): BusinessContext {
   if (contexts.length === 0) {
     return createEmptyContext();
   }
@@ -127,7 +144,12 @@ export function mergeBusinessContexts(contexts: BusinessContext[]): BusinessCont
     vocabulary: new Map(),
     relationships: [], // Empty - enhanced path will populate
     entityGraph: new Map(), // Empty - enhanced path will populate
-    domain: { domain: 'general', confidence: 0.5, keywords: [], alternativeDomains: [] }, // Default - enhanced path will populate
+    domain: {
+      domain: 'general',
+      confidence: 0.5,
+      keywords: [],
+      alternativeDomains: [],
+    }, // Default - enhanced path will populate
     views: new Map(),
     updatedAt: new Date().toISOString(),
   };
@@ -185,4 +207,3 @@ export function mergeBusinessContexts(contexts: BusinessContext[]): BusinessCont
 
   return merged;
 }
-

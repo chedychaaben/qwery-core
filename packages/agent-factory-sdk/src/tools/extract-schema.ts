@@ -14,14 +14,18 @@ export const extractSchema = async (
   const conn = await instance.connect();
 
   // Import validation function
-  const { isSystemOrTempTable, validateTableExists } = await import('./view-registry');
+  const { isSystemOrTempTable, validateTableExists } = await import(
+    './view-registry'
+  );
 
   try {
     // Validate view exists and is not temp if viewName is provided
     // But allow temp tables during creation process (allowTempTables = true)
     if (opts.viewName) {
       if (!opts.allowTempTables && isSystemOrTempTable(opts.viewName)) {
-        throw new Error(`Cannot extract schema from system/temp table: ${opts.viewName}`);
+        throw new Error(
+          `Cannot extract schema from system/temp table: ${opts.viewName}`,
+        );
       }
 
       const exists = await validateTableExists(opts.dbPath, opts.viewName);
@@ -57,7 +61,11 @@ export const extractSchema = async (
         }
         // Exclude views with dots (schema-qualified) or special characters
         const nameLower = name.toLowerCase();
-        if (nameLower.includes('.') || nameLower.includes('$') || nameLower.includes('#')) {
+        if (
+          nameLower.includes('.') ||
+          nameLower.includes('$') ||
+          nameLower.includes('#')
+        ) {
           return false;
         }
         return true;

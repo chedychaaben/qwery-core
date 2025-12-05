@@ -11,7 +11,10 @@ import { fromPromise } from 'xstate/actors';
 import { resolveModel } from '../../services';
 import { testConnection } from '../../tools/test-connection';
 import { gsheetToDuckdb } from '../../tools/gsheet-to-duckdb';
-import { extractSchema, extractSchemasParallel } from '../../tools/extract-schema';
+import {
+  extractSchema,
+  extractSchemasParallel,
+} from '../../tools/extract-schema';
 import type { SimpleSchema } from '@qwery/domain/entities';
 import { runQuery } from '../../tools/run-query';
 import {
@@ -21,19 +24,16 @@ import {
   generateSemanticViewName,
   validateViewExists,
   validateTableExists,
-  renameView,
-  updateViewName,
   dropTable,
   createViewFromTable,
   withRetry,
   formatViewCreationError,
   cleanupOrphanedTempTables,
-  isSystemOrTempTable,
   type RegistryContext,
 } from '../../tools/view-registry';
 import { READ_DATA_AGENT_PROMPT } from '../prompts/read-data-agent.prompt';
 import type { BusinessContext } from '../../tools/types/business-context.types';
-import { loadBusinessContext, createEmptyContext, mergeBusinessContexts } from '../../tools/utils/business-context.storage';
+import { mergeBusinessContexts } from '../../tools/utils/business-context.storage';
 import { getConfig } from '../../tools/utils/business-context.config';
 import { buildBusinessContext } from '../../tools/build-business-context';
 import { enhanceBusinessContextInBackground } from './enhance-business-context.actor';
@@ -76,8 +76,6 @@ export const readDataAgent = async (
 ) => {
   // Cache for view list to avoid redundant calls
   let cachedViews: Awaited<ReturnType<typeof loadViewRegistry>> | null = null;
-  let cacheTimestamp: number = 0;
-  const CACHE_TTL = 60000; // 1 minute cache
 
   const result = new Agent({
     model: await resolveModel('azure/gpt-5-mini'),
@@ -101,7 +99,8 @@ export const readDataAgent = async (
         },
       }),
       createDbViewFromSheet: tool({
-        description: 'Create a View from a Google Sheet. Can handle single or multiple sheets. IMPORTANT: Only use this when the user explicitly provides NEW Google Sheet URLs that are not already in the registry. Always call listViews first to check if sheets already exist.',
+        description:
+          'Create a View from a Google Sheet. Can handle single or multiple sheets. IMPORTANT: Only use this when the user explicitly provides NEW Google Sheet URLs that are not already in the registry. Always call listViews first to check if sheets already exist.',
         inputSchema: z.object({
           sharedLink: z.union([z.string(), z.array(z.string())]),
         }),
@@ -170,9 +169,7 @@ export const readDataAgent = async (
                         existingRecord.viewName,
                       );
                       if (!recreated) {
-                        throw new Error(
-                          'Failed to recreate view in database',
-                        );
+                        throw new Error('Failed to recreate view in database');
                       }
                     }
 
@@ -232,7 +229,11 @@ export const readDataAgent = async (
 
                     // Step 5: Create final view from temp table (atomic operation)
                     finalViewName = semanticName;
-                    await createViewFromTable(dbPath, finalViewName, tempViewName);
+                    await createViewFromTable(
+                      dbPath,
+                      finalViewName,
+                      tempViewName,
+                    );
 
                     // Step 6: Validate final view exists
                     const finalExists = await validateTableExists(
@@ -410,22 +411,25 @@ export const readDataAgent = async (
           };
 
           // Use cached views if available
-          const views = cachedViews || await loadViewRegistry(context);
+          const views = cachedViews || (await loadViewRegistry(context));
 
           // Validate viewName exists if provided
           if (viewName) {
             const viewNameToCheck = viewName;
             const view = views.find(
-              (v) => v.viewName === viewNameToCheck || v.displayName === viewNameToCheck,
+              (v) =>
+                v.viewName === viewNameToCheck ||
+                v.displayName === viewNameToCheck,
             );
 
             if (!view) {
               // Try to find similar names
               const viewNameLower = viewNameToCheck.toLowerCase();
               const suggestions = views
-                .filter((v) =>
-                  v.viewName.toLowerCase().includes(viewNameLower) ||
-                  v.displayName?.toLowerCase().includes(viewNameLower),
+                .filter(
+                  (v) =>
+                    v.viewName.toLowerCase().includes(viewNameLower) ||
+                    v.displayName?.toLowerCase().includes(viewNameLower),
                 )
                 .map((v) => v.displayName || v.viewName)
                 .slice(0, 3);
@@ -522,7 +526,10 @@ export const readDataAgent = async (
             0,
             perfConfig.expectedViewCount * 2,
           );
-          const relationships = fastContext.relationships.slice(0, perfConfig.expectedViewCount * 3);
+          const relationships = fastContext.relationships.slice(
+            0,
+            perfConfig.expectedViewCount * 3,
+          );
           const vocabulary = Object.fromEntries(
             Array.from(fastContext.vocabulary.entries())
               .slice(0, perfConfig.expectedViewCount * 10)

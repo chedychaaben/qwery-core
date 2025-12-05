@@ -170,7 +170,8 @@ export const createStateMachine = (
                       guard: 'shouldRetry',
                       target: 'retrying',
                       actions: assign({
-                        retryCount: ({ context }) => (context.retryCount || 0) + 1,
+                        retryCount: ({ context }) =>
+                          (context.retryCount || 0) + 1,
                         lastError: ({ event }) => event.error as Error,
                       }),
                     },
@@ -190,7 +191,8 @@ export const createStateMachine = (
                     target: 'retrying',
                     guard: 'shouldRetry',
                     actions: assign({
-                      retryCount: ({ context }) => (context.retryCount || 0) + 1,
+                      retryCount: ({ context }) =>
+                        (context.retryCount || 0) + 1,
                       error: () => 'Intent detection timeout',
                     }),
                   },
@@ -297,7 +299,8 @@ export const createStateMachine = (
                           guard: 'shouldRetry',
                           target: 'retrying',
                           actions: assign({
-                            retryCount: ({ context }) => (context.retryCount || 0) + 1,
+                            retryCount: ({ context }) =>
+                              (context.retryCount || 0) + 1,
                             lastError: ({ event }) => event.error as Error,
                           }),
                         },
@@ -309,7 +312,11 @@ export const createStateMachine = (
                                 event.error instanceof Error
                                   ? event.error.message
                                   : String(event.error);
-                              console.error('readData error:', errorMsg, event.error);
+                              console.error(
+                                'readData error:',
+                                errorMsg,
+                                event.error,
+                              );
                               return errorMsg;
                             },
                             streamResult: undefined,

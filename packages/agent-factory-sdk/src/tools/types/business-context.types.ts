@@ -60,4 +60,3 @@ export interface BusinessContext {
   views: Map<string, ViewMetadata>; // view name → metadata
   updatedAt: string;
 }
-

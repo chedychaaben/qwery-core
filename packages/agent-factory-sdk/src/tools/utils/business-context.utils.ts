@@ -1,5 +1,9 @@
 import type { SimpleSchema } from '@qwery/domain/entities';
-import type { BusinessEntity, Relationship, VocabularyEntry } from '../types/business-context.types';
+import type {
+  BusinessEntity,
+  Relationship,
+  VocabularyEntry,
+} from '../types/business-context.types';
 import type { PerformanceConfig } from './business-context.config';
 
 // Removed BUSINESS_SYNONYMS - now using pattern-based synonym detection (domain-agnostic)
@@ -107,11 +111,17 @@ export function calculateEntityConfidence(
     confidence = 0.95;
   } else if (name.endsWith('_id') && dataType.includes('INTEGER')) {
     confidence = 0.9;
-  } else if (businessType === 'entity' && name.match(/^(user|customer|order|product)/)) {
+  } else if (
+    businessType === 'entity' &&
+    name.match(/^(user|customer|order|product)/)
+  ) {
     confidence = 0.85;
   } else if (businessType === 'relationship') {
     confidence = 0.8;
-  } else if (dataType.includes('VARCHAR') && name.match(/(name|title|description)/)) {
+  } else if (
+    dataType.includes('VARCHAR') &&
+    name.match(/(name|title|description)/)
+  ) {
     confidence = 0.75;
   } else if (dataType.includes('DATE') || dataType.includes('TIMESTAMP')) {
     confidence = 0.7;
@@ -162,7 +172,10 @@ function groupRelatedColumns(
 
   for (const column of columns) {
     const entityName = inferBusinessEntity(column.columnName);
-    const businessType = detectBusinessType(column.columnName, column.columnType);
+    const businessType = detectBusinessType(
+      column.columnName,
+      column.columnType,
+    );
     const confidence = calculateEntityConfidence(
       column.columnName,
       column.columnType,
@@ -250,7 +263,10 @@ export function analyzeSchema(
             existing.views.push(table.tableName);
           }
           // Update confidence if higher
-          existing.confidence = Math.max(existing.confidence, entity.confidence);
+          existing.confidence = Math.max(
+            existing.confidence,
+            entity.confidence,
+          );
         } else {
           entityMap.set(entity.name, entity);
         }
@@ -269,7 +285,10 @@ export function analyzeSchema(
 /**
  * Detect synonyms from column name patterns (domain-agnostic)
  */
-function detectSynonymsFromPatterns(entityName: string, allColumns: string[]): string[] {
+function detectSynonymsFromPatterns(
+  entityName: string,
+  allColumns: string[],
+): string[] {
   const synonyms: string[] = [];
   const entityLower = entityName.toLowerCase();
 
@@ -318,7 +337,10 @@ export function buildVocabulary(
     const entityNameLower = entity.name.toLowerCase();
 
     // Detect synonyms from patterns (domain-agnostic)
-    const detectedSynonyms = detectSynonymsFromPatterns(entity.name, allColumnNames);
+    const detectedSynonyms = detectSynonymsFromPatterns(
+      entity.name,
+      allColumnNames,
+    );
 
     // Create or update vocabulary entry
     let entry = vocabulary.get(entityNameLower);
@@ -438,7 +460,12 @@ export function buildEntityGraph(
  * Infer domain from schema patterns (PATTERN-BASED, domain-agnostic)
  * Analyzes column name patterns, structures, and relationships to infer domain
  */
-export function inferDomain(schemas: SimpleSchema[]): { domain: string; confidence: number; keywords: string[]; alternativeDomains: Array<{ domain: string; confidence: number }> } {
+export function inferDomain(schemas: SimpleSchema[]): {
+  domain: string;
+  confidence: number;
+  keywords: string[];
+  alternativeDomains: Array<{ domain: string; confidence: number }>;
+} {
   // Collect all column names and patterns
   const allColumns: string[] = [];
   const columnPatterns = new Map<string, number>(); // pattern -> count
@@ -575,4 +602,3 @@ export function inferDomain(schemas: SimpleSchema[]): { domain: string; confiden
     alternativeDomains,
   };
 }
-

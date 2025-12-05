@@ -1,5 +1,6 @@
 import { streamText, UIMessage, Experimental_Agent } from 'ai';
 import { z } from 'zod';
+import type { AnyActorRef } from 'xstate';
 
 /**
  * List of intents that the agent can handle.
@@ -354,7 +355,7 @@ export type AgentContext = {
   error?: string;
   retryCount?: number; // Track retry attempts
   lastError?: Error; // Store last error for retry logic
-  enhancementActors?: Array<{ id: string; ref: any }>; // Track spawned actors
+  enhancementActors?: Array<{ id: string; ref: AnyActorRef }>; // Track spawned actors
 };
 
 export type AgentEvents =

@@ -5,7 +5,7 @@ import { createStateMachine } from './state-machine';
 import { Repositories } from '@qwery/domain/repositories';
 import { MessagePersistenceService } from '../services/message-persistence.service';
 import { ActorRegistry } from './utils/actor-registry';
-import { loadPersistedState, persistState } from './utils/state-persistence';
+import { persistState } from './utils/state-persistence';
 
 export interface FactoryAgentOptions {
   conversationSlug: string;

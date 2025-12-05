@@ -8,7 +8,9 @@ export class ActorRegistry {
 
   register(id: string, actor: AnyActorRef): void {
     if (this.actors.has(id)) {
-      console.warn(`[ActorRegistry] Actor ${id} already registered, stopping previous`);
+      console.warn(
+        `[ActorRegistry] Actor ${id} already registered, stopping previous`,
+      );
       this.actors.get(id)?.stop();
     }
     this.actors.set(id, actor);
@@ -42,4 +44,3 @@ export class ActorRegistry {
     return new Map(this.actors);
   }
 }
-

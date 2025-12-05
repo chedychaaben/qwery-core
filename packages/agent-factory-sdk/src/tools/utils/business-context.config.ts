@@ -142,4 +142,3 @@ export async function getConfig(
 
   return configCache.get(cacheKey)!;
 }
-

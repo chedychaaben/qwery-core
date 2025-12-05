@@ -1,5 +1,9 @@
 import type { SimpleSchema } from '@qwery/domain/entities';
-import type { BusinessContext, BusinessEntity, VocabularyEntry } from './types/business-context.types';
+import type {
+  BusinessContext,
+  BusinessEntity,
+  VocabularyEntry,
+} from './types/business-context.types';
 import { saveBusinessContext } from './utils/business-context.storage';
 import { isSystemOrTempTable } from './utils/business-context.utils';
 
@@ -88,7 +92,9 @@ function extractEntityName(columnName: string): string | null {
       // Take first word, capitalize
       const firstWord = words[0];
       if (firstWord) {
-        return firstWord.charAt(0).toUpperCase() + firstWord.slice(1).toLowerCase();
+        return (
+          firstWord.charAt(0).toUpperCase() + firstWord.slice(1).toLowerCase()
+        );
       }
     }
   }
@@ -113,7 +119,9 @@ export const buildBusinessContext = async (
   };
 
   if (filteredSchema.tables.length === 0) {
-    throw new Error(`No valid tables found in schema for view: ${opts.viewName}`);
+    throw new Error(
+      `No valid tables found in schema for view: ${opts.viewName}`,
+    );
   }
 
   // FAST PATH: Extract entities using PATTERN-BASED detection (domain-agnostic)
@@ -151,7 +159,8 @@ export const buildBusinessContext = async (
               views: [opts.viewName],
               dataType: column.columnType,
               businessType,
-              confidence: colName.endsWith('_id') || colName === 'id' ? 0.8 : 0.7,
+              confidence:
+                colName.endsWith('_id') || colName === 'id' ? 0.8 : 0.7,
             });
           }
 
@@ -173,7 +182,12 @@ export const buildBusinessContext = async (
     vocabulary,
     relationships: [], // Empty - no relationship detection in fast path
     entityGraph: new Map(), // Empty - no graph building in fast path
-    domain: { domain: 'general', confidence: 0.5, keywords: [], alternativeDomains: [] }, // Default - no domain inference in fast path
+    domain: {
+      domain: 'general',
+      confidence: 0.5,
+      keywords: [],
+      alternativeDomains: [],
+    }, // Default - no domain inference in fast path
     views: new Map([
       [
         opts.viewName,
@@ -195,9 +209,10 @@ export const buildBusinessContext = async (
 
   const elapsed = Date.now() - startTime;
   if (elapsed > 100) {
-    console.warn(`[BuildBusinessContext] Fast path took ${elapsed}ms (target: < 100ms) for view: ${opts.viewName}`);
+    console.warn(
+      `[BuildBusinessContext] Fast path took ${elapsed}ms (target: < 100ms) for view: ${opts.viewName}`,
+    );
   }
 
   return fastContext;
 };
-

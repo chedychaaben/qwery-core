@@ -65,4 +65,3 @@ export function createCachedActor<TInput, TOutput>(
     });
   });
 }
-

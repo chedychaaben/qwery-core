@@ -30,10 +30,22 @@ const sanitizeViewName = (name: string): string => {
  */
 function pluralize(word: string): string {
   const lower = word.toLowerCase();
-  if (lower.endsWith('y') && !lower.endsWith('ay') && !lower.endsWith('ey') && !lower.endsWith('oy') && !lower.endsWith('uy')) {
+  if (
+    lower.endsWith('y') &&
+    !lower.endsWith('ay') &&
+    !lower.endsWith('ey') &&
+    !lower.endsWith('oy') &&
+    !lower.endsWith('uy')
+  ) {
     return lower.slice(0, -1) + 'ies';
   }
-  if (lower.endsWith('s') || lower.endsWith('x') || lower.endsWith('z') || lower.endsWith('ch') || lower.endsWith('sh')) {
+  if (
+    lower.endsWith('s') ||
+    lower.endsWith('x') ||
+    lower.endsWith('z') ||
+    lower.endsWith('ch') ||
+    lower.endsWith('sh')
+  ) {
     return lower + 'es';
   }
   return lower + 's';
@@ -44,26 +56,29 @@ function pluralize(word: string): string {
  */
 function inferEntityName(columnName: string): string {
   let name = columnName.toLowerCase();
-  
+
   // Remove _id suffix
   name = name.replace(/_id$/, '');
-  
+
   // Remove common prefixes
-  name = name.replace(/^(user_|customer_|order_|product_|dept_|driver_|restaurant_|employee_|transaction_|item_)/, '');
-  
+  name = name.replace(
+    /^(user_|customer_|order_|product_|dept_|driver_|restaurant_|employee_|transaction_|item_)/,
+    '',
+  );
+
   // Convert to singular entity name
-  const words = name.split('_').filter(w => w.length > 0);
+  const words = name.split('_').filter((w) => w.length > 0);
   if (words.length === 0) return columnName;
-  
-  return words
-    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ');
+
+  return words.map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 }
 
 /**
  * Detect entity patterns from columns (PATTERN-BASED, domain-agnostic)
  */
-function detectEntityPatterns(columns: Array<{ columnName: string; columnType: string }>): string[] {
+function detectEntityPatterns(
+  columns: Array<{ columnName: string; columnType: string }>,
+): string[] {
   const patterns: string[] = [];
 
   for (const col of columns) {
@@ -88,7 +103,8 @@ function detectEntityPatterns(columns: Array<{ columnName: string; columnType: s
     if (lower.endsWith('s') && lower.length > 3 && !lower.endsWith('ss')) {
       const singular = lower.slice(0, -1);
       if (singular.length > 2) {
-        const capitalized = singular.charAt(0).toUpperCase() + singular.slice(1);
+        const capitalized =
+          singular.charAt(0).toUpperCase() + singular.slice(1);
         patterns.push(capitalized);
       }
     }
@@ -109,7 +125,9 @@ function detectEntityPatterns(columns: Array<{ columnName: string; columnType: s
 /**
  * Infer from column names (PATTERN-BASED, domain-agnostic)
  */
-function inferFromColumnNames(columns: Array<{ columnName: string; columnType: string }>): string | null {
+function inferFromColumnNames(
+  columns: Array<{ columnName: string; columnType: string }>,
+): string | null {
   // Strategy 1: Look for most prominent entity pattern
   const patterns = detectEntityPatterns(columns);
   if (patterns.length > 0 && patterns[0]) {
@@ -118,7 +136,9 @@ function inferFromColumnNames(columns: Array<{ columnName: string; columnType: s
 
   // Strategy 2: Look for capitalized single-word columns (strong entity indicators)
   const capitalizedColumns = columns
-    .filter((c) => /^[A-Z][a-z]+$/.test(c.columnName) && c.columnName.length > 2)
+    .filter(
+      (c) => /^[A-Z][a-z]+$/.test(c.columnName) && c.columnName.length > 2,
+    )
     .map((c) => c.columnName);
 
   if (capitalizedColumns.length > 0) {
@@ -132,7 +152,11 @@ function inferFromColumnNames(columns: Array<{ columnName: string; columnType: s
   // Strategy 3: Look for name/title columns and infer entity
   const nameColumns = columns.filter((c) => {
     const lower = c.columnName.toLowerCase();
-    return lower.includes('name') || lower.includes('title') || lower.includes('label');
+    return (
+      lower.includes('name') ||
+      lower.includes('title') ||
+      lower.includes('label')
+    );
   });
 
   if (nameColumns.length > 0) {
@@ -171,15 +195,15 @@ export function generateSemanticViewName(
 ): string {
   const table = schema.tables[0];
   if (!table) return 'data';
-  
+
   let semanticName: string | null = null;
-  
+
   // Strategy 1: Look for primary entity indicators (ID columns)
-  const idColumns = table.columns.filter(c => {
+  const idColumns = table.columns.filter((c) => {
     const name = c.columnName.toLowerCase();
     return name.endsWith('_id') || name === 'id';
   });
-  
+
   if (idColumns.length > 0) {
     const primaryId = idColumns[0];
     if (primaryId) {
@@ -187,7 +211,7 @@ export function generateSemanticViewName(
       semanticName = pluralize(entityName.toLowerCase());
     }
   }
-  
+
   // Strategy 2: Use most common entity pattern
   if (!semanticName) {
     const entityPatterns = detectEntityPatterns(table.columns);
@@ -195,20 +219,20 @@ export function generateSemanticViewName(
       semanticName = pluralize(entityPatterns[0].toLowerCase());
     }
   }
-  
+
   // Strategy 3: Infer from column names
   if (!semanticName) {
     semanticName = inferFromColumnNames(table.columns);
   }
-  
+
   // Fallback
   if (!semanticName) {
     semanticName = 'data';
   }
-  
+
   // Sanitize
-  let viewName = sanitizeViewName(semanticName);
-  
+  const viewName = sanitizeViewName(semanticName);
+
   // Ensure uniqueness
   let finalName = viewName;
   let counter = 1;
@@ -216,7 +240,7 @@ export function generateSemanticViewName(
     finalName = `${viewName}_${counter}`;
     counter += 1;
   }
-  
+
   return finalName;
 }
 
@@ -252,9 +276,13 @@ const saveViewRegistry = async (
 ) => {
   await ensureConversationDir(context);
   const { writeFile } = await import('node:fs/promises');
-  await writeFile(await registryPath(context), JSON.stringify(records, null, 2), {
-    encoding: 'utf-8',
-  });
+  await writeFile(
+    await registryPath(context),
+    JSON.stringify(records, null, 2),
+    {
+      encoding: 'utf-8',
+    },
+  );
 };
 
 export const registerSheetView = async (
@@ -364,7 +392,9 @@ export const renameView = async (
   try {
     const escapedOldName = oldName.replace(/"/g, '""');
     const escapedNewName = newName.replace(/"/g, '""');
-    await conn.run(`ALTER VIEW "${escapedOldName}" RENAME TO "${escapedNewName}"`);
+    await conn.run(
+      `ALTER VIEW "${escapedOldName}" RENAME TO "${escapedNewName}"`,
+    );
   } finally {
     conn.closeSync();
     instance.closeSync();
@@ -487,7 +517,9 @@ export const listAllTables = async (dbPath: string): Promise<string[]> => {
         WHERE table_schema = 'main'
       `);
       await viewsReader.readAll();
-      const rows = viewsReader.getRowObjectsJS() as Array<{ table_name: string }>;
+      const rows = viewsReader.getRowObjectsJS() as Array<{
+        table_name: string;
+      }>;
       return rows.map((r) => r.table_name);
     } finally {
       conn.closeSync();
@@ -512,7 +544,9 @@ function extractTimestampFromTempName(tableName: string): number | null {
 /**
  * Clean up orphaned temp tables older than 1 hour
  */
-export const cleanupOrphanedTempTables = async (dbPath: string): Promise<void> => {
+export const cleanupOrphanedTempTables = async (
+  dbPath: string,
+): Promise<void> => {
   try {
     const tables = await listAllTables(dbPath);
     const tempTables = tables.filter((t) => t.startsWith('temp_'));
@@ -571,21 +605,36 @@ export async function withRetry<T>(
 /**
  * Format view creation error for user
  */
-export function formatViewCreationError(error: Error, sharedLink: string): string {
+export function formatViewCreationError(
+  error: Error,
+  sharedLink: string,
+): string {
   const errorMsg = error.message;
 
-  if (errorMsg.includes('does not exist') || errorMsg.includes('Table') || errorMsg.includes('View')) {
-    return `Failed to create view from Google Sheet. The sheet may be inaccessible or the connection timed out. ` +
-           `Please verify the sheet is shared publicly or check your permissions. ` +
-           `Link: ${sharedLink}`;
+  if (
+    errorMsg.includes('does not exist') ||
+    errorMsg.includes('Table') ||
+    errorMsg.includes('View')
+  ) {
+    return (
+      `Failed to create view from Google Sheet. The sheet may be inaccessible or the connection timed out. ` +
+      `Please verify the sheet is shared publicly or check your permissions. ` +
+      `Link: ${sharedLink}`
+    );
   }
 
   if (errorMsg.includes('Catalog Error') || errorMsg.includes('Catalog')) {
-    return `Database error while creating view. This might be a temporary issue. ` +
-           `Please try again in a moment. If the problem persists, the sheet format may be incompatible.`;
+    return (
+      `Database error while creating view. This might be a temporary issue. ` +
+      `Please try again in a moment. If the problem persists, the sheet format may be incompatible.`
+    );
   }
 
-  if (errorMsg.includes('timeout') || errorMsg.includes('network') || errorMsg.includes('fetch')) {
+  if (
+    errorMsg.includes('timeout') ||
+    errorMsg.includes('network') ||
+    errorMsg.includes('fetch')
+  ) {
     return `Network error while accessing Google Sheet. Please check your internet connection and try again.`;
   }
 

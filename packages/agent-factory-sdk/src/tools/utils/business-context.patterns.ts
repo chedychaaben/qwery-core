@@ -29,7 +29,9 @@ export async function extractDataPatterns(
         `SELECT * FROM "${escapedViewName}" LIMIT 100`,
       );
       await sampleReader.readAll();
-      const rows = sampleReader.getRowObjectsJS() as Array<Record<string, unknown>>;
+      const rows = sampleReader.getRowObjectsJS() as Array<
+        Record<string, unknown>
+      >;
       const columnNames = sampleReader.columnNames();
 
       if (rows.length === 0) {
@@ -52,7 +54,10 @@ export async function extractDataPatterns(
         // Detect enums (categorical values)
         if (column.columnType.includes('VARCHAR')) {
           const uniqueValues = new Set(values.map(String));
-          if (uniqueValues.size <= 10 && uniqueValues.size < values.length * 0.5) {
+          if (
+            uniqueValues.size <= 10 &&
+            uniqueValues.size < values.length * 0.5
+          ) {
             patterns.enums.set(columnName, Array.from(uniqueValues));
           }
 
@@ -101,4 +106,3 @@ export async function extractDataPatterns(
 
   return patterns;
 }
-

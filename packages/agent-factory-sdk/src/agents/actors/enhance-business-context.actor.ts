@@ -1,8 +1,18 @@
 import { fromPromise } from 'xstate/actors';
 import type { SimpleSchema } from '@qwery/domain/entities';
 import type { BusinessContext } from '../../tools/types/business-context.types';
-import { loadBusinessContext, saveBusinessContext, createEmptyContext } from '../../tools/utils/business-context.storage';
-import { analyzeSchema, buildVocabulary, inferDomain, buildEntityGraph, isSystemOrTempTable } from '../../tools/utils/business-context.utils';
+import {
+  loadBusinessContext,
+  saveBusinessContext,
+  createEmptyContext,
+} from '../../tools/utils/business-context.storage';
+import {
+  analyzeSchema,
+  buildVocabulary,
+  inferDomain,
+  buildEntityGraph,
+  isSystemOrTempTable,
+} from '../../tools/utils/business-context.utils';
 import { findRelationshipsParallel } from '../../tools/utils/business-context.relationships';
 import { extractDataPatterns } from '../../tools/utils/business-context.patterns';
 import { getConfig } from '../../tools/utils/business-context.config';
@@ -41,11 +51,15 @@ async function enhanceBusinessContextFunction(
   // Filter out system/temp tables
   const filteredSchema = {
     ...input.schema,
-    tables: input.schema.tables.filter((t) => !isSystemOrTempTable(t.tableName)),
+    tables: input.schema.tables.filter(
+      (t) => !isSystemOrTempTable(t.tableName),
+    ),
   };
 
   if (filteredSchema.tables.length === 0) {
-    throw new Error(`No valid tables found in schema for view: ${input.viewName}`);
+    throw new Error(
+      `No valid tables found in schema for view: ${input.viewName}`,
+    );
   }
 
   // ENHANCED PATH: Extract all entities with confidence scoring
@@ -80,7 +94,11 @@ async function enhanceBusinessContextFunction(
   let dataPatterns;
   if (input.dbPath && config.enableDataPatterns && config.enablePruning) {
     try {
-      dataPatterns = await extractDataPatterns(input.dbPath, input.viewName, input.schema);
+      dataPatterns = await extractDataPatterns(
+        input.dbPath,
+        input.viewName,
+        input.schema,
+      );
     } catch {
       // If extraction fails, continue without patterns
     }
@@ -124,8 +142,8 @@ async function enhanceBusinessContextFunction(
 
   // ENHANCED PATH: Infer domain
   const allSchemasForDomain = Array.from(context.views.entries())
-    .filter(([name]) => !isSystemOrTempTable(name))
-    .map(([name, meta]) => meta.schema);
+    .filter(([viewName]) => !isSystemOrTempTable(viewName))
+    .map(([, meta]) => meta.schema);
   context.domain = inferDomain(allSchemasForDomain);
 
   // Save enhanced context (overwrites fast context)
@@ -143,7 +161,11 @@ async function enhanceBusinessContextFunction(
  * Enhanced business context actor (for use in actor systems)
  */
 export const enhanceBusinessContextActor = fromPromise(
-  async ({ input }: { input: EnhanceBusinessContextInput }): Promise<BusinessContext> => {
+  async ({
+    input,
+  }: {
+    input: EnhanceBusinessContextInput;
+  }): Promise<BusinessContext> => {
     return enhanceBusinessContextFunction(input);
   },
 );
@@ -173,7 +195,10 @@ export function enhanceBusinessContextInBackground(
         inFlightEnhancements.delete(key);
       })
       .catch((error) => {
-        console.warn('[EnhanceBusinessContext] Background enhancement failed:', error);
+        console.warn(
+          '[EnhanceBusinessContext] Background enhancement failed:',
+          error,
+        );
       });
   };
 
@@ -185,4 +210,3 @@ export function enhanceBusinessContextInBackground(
     Promise.resolve().then(runEnhancement);
   }
 }
-

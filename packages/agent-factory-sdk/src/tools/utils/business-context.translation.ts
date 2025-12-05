@@ -1,4 +1,7 @@
-import type { BusinessContext, BusinessEntity, Relationship } from '../types/business-context.types';
+import type {
+  BusinessContext,
+  Relationship,
+} from '../types/business-context.types';
 import { toSingular } from './business-context.utils';
 
 /**
@@ -9,12 +12,14 @@ export function translateBusinessTermToColumn(
   term: string,
   viewName?: string,
 ): Array<{ column: string; view: string; confidence: number }> {
-  const results: Array<{ column: string; view: string; confidence: number }> = [];
+  const results: Array<{ column: string; view: string; confidence: number }> =
+    [];
   const termLower = term.toLowerCase();
   const singularTerm = toSingular(termLower);
 
   // Direct vocabulary lookup
-  const entry = context.vocabulary.get(termLower) || context.vocabulary.get(singularTerm);
+  const entry =
+    context.vocabulary.get(termLower) || context.vocabulary.get(singularTerm);
   if (entry) {
     for (const techTerm of entry.technicalTerms) {
       // Find which view(s) contain this column
@@ -35,8 +40,11 @@ export function translateBusinessTermToColumn(
   }
 
   // Synonym lookup
-  for (const [vocabTerm, vocabEntry] of context.vocabulary.entries()) {
-    if (vocabEntry.synonyms.includes(termLower) || vocabEntry.synonyms.includes(singularTerm)) {
+  for (const [_vocabTerm, vocabEntry] of context.vocabulary.entries()) {
+    if (
+      vocabEntry.synonyms.includes(termLower) ||
+      vocabEntry.synonyms.includes(singularTerm)
+    ) {
       for (const techTerm of vocabEntry.technicalTerms) {
         for (const entity of context.entities.values()) {
           if (entity.columns.includes(techTerm)) {
@@ -122,4 +130,3 @@ export function getEntityColumns(
 
   return results;
 }
-

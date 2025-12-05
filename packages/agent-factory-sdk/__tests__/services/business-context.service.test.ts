@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { loadBusinessContext } from '../../src/tools/business-context.storage';
+import { loadBusinessContext } from '../../src/tools/utils/business-context.storage';
 import { buildBusinessContext } from '../../src/tools/build-business-context';
 import type { SimpleSchema } from '@qwery/domain/entities';
 import { join } from 'node:path';
@@ -47,7 +47,7 @@ describe('BusinessContextService', () => {
     expect(context.views.has('users')).toBe(true);
   });
 
-  it('should detect relationships between multiple views', async () => {
+  it('should build fast context for multiple views (relationships detected in enhanced path)', async () => {
     // First view
     const schema1: SimpleSchema = {
       databaseName: 'test',
@@ -63,7 +63,7 @@ describe('BusinessContextService', () => {
       ],
     };
 
-    await buildBusinessContext({
+    const context1 = await buildBusinessContext({
       conversationDir: testDir,
       viewName: 'users',
       schema: schema1,
@@ -85,14 +85,18 @@ describe('BusinessContextService', () => {
       ],
     };
 
-    const context = await buildBusinessContext({
+    const context2 = await buildBusinessContext({
       conversationDir: testDir,
       viewName: 'orders',
       schema: schema2,
     });
 
-    expect(context.relationships.length).toBeGreaterThan(0);
-    expect(context.entityGraph.size).toBeGreaterThan(0);
+    // Fast path doesn't detect relationships (that's done in enhanced path)
+    expect(context1.relationships.length).toBe(0);
+    expect(context2.relationships.length).toBe(0);
+    // But should have entities
+    expect(context1.entities.size).toBeGreaterThan(0);
+    expect(context2.entities.size).toBeGreaterThan(0);
   });
 
   it('should persist and load business context', async () => {
@@ -115,6 +119,9 @@ describe('BusinessContextService', () => {
       viewName: 'products',
       schema,
     });
+
+    // Wait a bit for async save to complete
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     const loaded = await loadBusinessContext(testDir);
 

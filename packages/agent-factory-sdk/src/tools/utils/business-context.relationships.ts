@@ -1,7 +1,9 @@
 import type { SimpleSchema } from '@qwery/domain/entities';
-import type { BusinessContext, Relationship } from '../types/business-context.types';
+import type {
+  BusinessContext,
+  Relationship,
+} from '../types/business-context.types';
 import type { PerformanceConfig } from './business-context.config';
-import { isSystemOrTempTable } from './business-context.utils';
 
 /**
  * Validate relationship with actual data (check cardinality)
@@ -12,7 +14,11 @@ async function validateRelationship(
   toView: string,
   fromColumn: string,
   toColumn: string,
-): Promise<{ confidence: number; type: Relationship['type']; direction: Relationship['direction'] }> {
+): Promise<{
+  confidence: number;
+  type: Relationship['type'];
+  direction: Relationship['direction'];
+}> {
   try {
     const { DuckDBInstance } = await import('@duckdb/node-api');
     const instance = await DuckDBInstance.create(dbPath);
@@ -200,14 +206,16 @@ export async function findRelationshipsParallel(
   }
 
   // PARALLEL: Compare all pairs concurrently
-  const relationshipPromises = pairs.map(async ([view1, schema1, view2, schema2]) => {
-    return findRelationshipsBetween(
-      { viewName: view1, schema: schema1 },
-      { viewName: view2, schema: schema2 },
-      dbPath,
-      config,
-    );
-  });
+  const relationshipPromises = pairs.map(
+    async ([view1, schema1, view2, schema2]) => {
+      return findRelationshipsBetween(
+        { viewName: view1, schema: schema1 },
+        { viewName: view2, schema: schema2 },
+        dbPath,
+        config,
+      );
+    },
+  );
 
   const relationshipArrays = await Promise.all(relationshipPromises);
 
@@ -218,4 +226,3 @@ export async function findRelationshipsParallel(
     .sort((a, b) => b.confidence - a.confidence)
     .slice(0, config.expectedViewCount * 3);
 }
-
