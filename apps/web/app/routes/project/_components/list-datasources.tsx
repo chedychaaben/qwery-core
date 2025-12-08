@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Link } from 'react-router';
 
@@ -7,6 +7,7 @@ import {
   ChevronRightIcon,
   MagnifyingGlassIcon,
 } from '@radix-ui/react-icons';
+import { Database } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 
@@ -42,6 +43,7 @@ export function ListDatasources({
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [shouldAnimate, setShouldAnimate] = useState(false);
+  const [failedLogos, setFailedLogos] = useState<Set<string>>(new Set());
 
   // Fetch all plugin metadata to get logos
   const { data: pluginMetadata = [] } = useQuery({
@@ -100,6 +102,10 @@ export function ListDatasources({
   const goToPage = (page: number) => {
     setCurrentPage(Math.max(1, Math.min(page, totalPages)));
   };
+
+  const handleLogoError = useCallback((datasourceId: string) => {
+    setFailedLogos((prev) => new Set(prev).add(datasourceId));
+  }, []);
 
   return (
     <Card className="w-full">
@@ -171,6 +177,8 @@ export function ListDatasources({
                 const logo = datasource.datasource_provider
                   ? pluginLogoMap.get(datasource.datasource_provider)
                   : undefined;
+                const hasFailed = failedLogos.has(datasource.id);
+                const showLogo = logo && !hasFailed;
 
                 return (
                   <Card
@@ -179,12 +187,17 @@ export function ListDatasources({
                   >
                     <CardHeader>
                       <div className="flex items-center gap-3">
-                        {logo && (
+                        {showLogo ? (
                           <img
                             src={logo}
                             alt={datasource.name}
-                            className="h-10 w-10 flex-shrink-0 rounded object-contain"
+                            className="h-10 w-10 shrink-0 rounded object-contain"
+                            onError={() => handleLogoError(datasource.id)}
                           />
+                        ) : (
+                          <div className="bg-muted flex h-10 w-10 shrink-0 items-center justify-center rounded">
+                            <Database className="text-muted-foreground h-5 w-5" />
+                          </div>
                         )}
                         <div className="min-w-0 flex-1">
                           <CardTitle className="truncate text-base">
@@ -274,7 +287,7 @@ export function ListDatasources({
                             }
                             size="sm"
                             onClick={() => goToPage(page)}
-                            className="min-w-[2.5rem]"
+                            className="min-w-10"
                           >
                             {page}
                           </Button>

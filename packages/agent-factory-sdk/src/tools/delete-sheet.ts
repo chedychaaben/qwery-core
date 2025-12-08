@@ -61,8 +61,7 @@ export const deleteSheet = async (
       } catch (error) {
         failedSheets.push({
           sheetName,
-          error:
-            error instanceof Error ? error.message : String(error),
+          error: error instanceof Error ? error.message : String(error),
         });
       }
     }
@@ -91,4 +90,3 @@ export const deleteSheet = async (
     instance.closeSync();
   }
 };
-

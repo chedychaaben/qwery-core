@@ -24,4 +24,3 @@ export const systemInfoActor = fromPromise(
     return result;
   },
 );
-

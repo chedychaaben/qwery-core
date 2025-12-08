@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { Database, ChevronsUpDown } from 'lucide-react';
 
 import {
@@ -45,6 +45,7 @@ export function DatasourceSelector({
 }: DatasourceSelectorProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
 
   const filteredDatasources = useMemo(() => {
     if (!search.trim()) {
@@ -60,6 +61,10 @@ export function DatasourceSelector({
   }, [datasources, search]);
 
   const visibleItems = filteredDatasources.slice(0, MAX_VISIBLE_ITEMS);
+
+  const handleImageError = useCallback((datasourceId: string) => {
+    setFailedImages((prev) => new Set(prev).add(datasourceId));
+  }, []);
 
   const handleToggle = (datasourceId: string) => {
     const isSelected = selectedDatasources.includes(datasourceId);
@@ -119,11 +124,17 @@ export function DatasourceSelector({
 
           {displayInfo.type === 'single' && (
             <>
-              {displayInfo.icon ? (
+              {displayInfo.icon &&
+              !failedImages.has(selectedDatasources[0] ?? '') ? (
                 <img
                   src={displayInfo.icon}
                   alt={displayInfo.label}
                   className="h-3.5 w-3.5 shrink-0 object-contain"
+                  onError={() => {
+                    if (selectedDatasources[0]) {
+                      handleImageError(selectedDatasources[0]);
+                    }
+                  }}
                 />
               ) : (
                 <Database className="h-3.5 w-3.5" />
@@ -172,6 +183,8 @@ export function DatasourceSelector({
                       const icon = pluginLogoMap.get(
                         datasource.datasource_provider,
                       );
+                      const hasFailed = failedImages.has(datasource.id);
+                      const showIcon = icon && !hasFailed;
 
                       return (
                         <CommandItem
@@ -188,12 +201,15 @@ export function DatasourceSelector({
                             onCheckedChange={() => handleToggle(datasource.id)}
                             onClick={(e) => e.stopPropagation()}
                           />
-                          {icon && (
+                          {showIcon ? (
                             <img
                               src={icon}
                               alt={datasource.name}
                               className="mr-2 h-4 w-4 shrink-0 object-contain"
+                              onError={() => handleImageError(datasource.id)}
                             />
+                          ) : (
+                            <Database className="text-muted-foreground mr-2 h-4 w-4 shrink-0" />
                           )}
                           <span className="truncate">{datasource.name}</span>
                         </CommandItem>

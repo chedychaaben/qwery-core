@@ -33,7 +33,8 @@ export const INTENTS_LIST = [
   },
   {
     name: 'system',
-    description: 'When the user asks about the system, what it is, what it can do, or how it works',
+    description:
+      'When the user asks about the system, what it is, what it can do, or how it works',
     destructive: false,
   },
   {

@@ -60,7 +60,7 @@ export function ProfileAvatar(props: ProfileAvatarProps) {
       fallback={
         <div
           className={cn(
-            'mx-auto h-9 w-9 shrink-0 rounded-full bg-muted',
+            'bg-muted mx-auto h-9 w-9 shrink-0 rounded-full',
             props.className,
           )}
         />

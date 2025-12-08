@@ -97,6 +97,7 @@ export class NotebookRunner {
 
         agent = await FactoryAgent.create({
           conversationSlug,
+          model: 'azure/gpt-5-mini',
           repositories: repositories as FactoryAgentOptions['repositories'],
         });
         agents.set(options.datasource.id, agent);

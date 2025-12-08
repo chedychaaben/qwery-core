@@ -78,4 +78,3 @@ export const renameSheet = async (
     instance.closeSync();
   }
 };
-

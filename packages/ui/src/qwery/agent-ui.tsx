@@ -50,8 +50,14 @@ import {
 import { Loader } from '../ai-elements/loader';
 import { ChatTransport, UIMessage, ToolUIPart } from 'ai';
 import { ChartRenderer, type ChartConfig } from './ai/charts/chart-renderer';
-import { ChartTypeSelector, type ChartTypeSelection } from './ai/charts/chart-type-selector';
-import { SQLQueryVisualizer, type SQLQueryResult } from './ai/sql-query-visualizer';
+import {
+  ChartTypeSelector,
+  type ChartTypeSelection,
+} from './ai/charts/chart-type-selector';
+import {
+  SQLQueryVisualizer,
+  type SQLQueryResult,
+} from './ai/sql-query-visualizer';
 import { SchemaVisualizer, type SchemaData } from './ai/schema-visualizer';
 import {
   AvailableSheetsVisualizer,
@@ -150,9 +156,9 @@ export default function QweryAgentUI(props: QweryAgentUIProps) {
       experimental_throttle: 100,
       transport: transportInstance,
     });
-  
+
   const { setIsProcessing } = useAgentStatus();
-  
+
   useEffect(() => {
     setIsProcessing(status === 'streaming' || status === 'submitted');
   }, [status, setIsProcessing]);
@@ -162,7 +168,9 @@ export default function QweryAgentUI(props: QweryAgentUIProps) {
   const viewSheetRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editText, setEditText] = useState<string>('');
-  const [copiedMessagePartId, setCopiedMessagePartId] = useState<string | null>(null);
+  const [copiedMessagePartId, setCopiedMessagePartId] = useState<string | null>(
+    null,
+  );
 
   // Handle edit message
   const handleEditStart = useCallback((messageId: string, text: string) => {
@@ -268,7 +276,10 @@ export default function QweryAgentUI(props: QweryAgentUIProps) {
     const currentCount = viewSheetEntries.length;
 
     // Only scroll if a new view sheet was added (count increased)
-    if (currentCount > prevViewSheetCountRef.current && viewSheetEntries.length > 0) {
+    if (
+      currentCount > prevViewSheetCountRef.current &&
+      viewSheetEntries.length > 0
+    ) {
       // Get the last (most recent) view sheet
       const lastEntry = viewSheetEntries[viewSheetEntries.length - 1];
       if (lastEntry && lastEntry[1]) {
@@ -321,9 +332,7 @@ export default function QweryAgentUI(props: QweryAgentUIProps) {
                       : -1;
 
                   return (
-                    <div
-                      key={message.id}
-                    >
+                    <div key={message.id}>
                       {message.role === 'assistant' &&
                         sourceParts.length > 0 && (
                           <Sources>
@@ -373,10 +382,10 @@ export default function QweryAgentUI(props: QweryAgentUIProps) {
                               >
                                 {message.role === 'assistant' && (
                                   <div className="mt-1 shrink-0">
-                                  <BotAvatar
-                                    size={6}
+                                    <BotAvatar
+                                      size={6}
                                       isLoading={isStreaming}
-                                  />
+                                    />
                                   </div>
                                 )}
                                 <div className="flex-end flex w-full max-w-[80%] min-w-0 flex-col justify-start gap-2">
@@ -481,9 +490,9 @@ export default function QweryAgentUI(props: QweryAgentUIProps) {
                                               <RefreshCcwIcon className="size-3" />
                                             </Button>
                                           )}
-                                            <Button
-                                              variant="ghost"
-                                              size="icon"
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
                                             onClick={async () => {
                                               const partId = `${message.id}-${i}`;
                                               try {
@@ -495,20 +504,25 @@ export default function QweryAgentUI(props: QweryAgentUIProps) {
                                                   setCopiedMessagePartId(null);
                                                 }, 2000);
                                               } catch (error) {
-                                                console.error('Failed to copy:', error);
+                                                console.error(
+                                                  'Failed to copy:',
+                                                  error,
+                                                );
                                               }
                                             }}
-                                              className="h-7 w-7"
+                                            className="h-7 w-7"
                                             title={
-                                              copiedMessagePartId === `${message.id}-${i}`
+                                              copiedMessagePartId ===
+                                              `${message.id}-${i}`
                                                 ? 'Copied!'
                                                 : 'Copy'
                                             }
                                           >
-                                            {copiedMessagePartId === `${message.id}-${i}` ? (
+                                            {copiedMessagePartId ===
+                                            `${message.id}-${i}` ? (
                                               <CheckIcon className="size-3 text-green-600" />
                                             ) : (
-                                            <CopyIcon className="size-3" />
+                                              <CopyIcon className="size-3" />
                                             )}
                                           </Button>
                                         </div>
@@ -557,10 +571,14 @@ export default function QweryAgentUI(props: QweryAgentUIProps) {
                                 toolPart.type === 'tool-generateChart';
                               const isSelectChartType =
                                 toolPart.type === 'tool-selectChartType';
-                              const isRunQuery = toolPart.type === 'tool-runQuery';
-                              const isGetSchema = toolPart.type === 'tool-getTableSchema';
-                              const isListViews = toolPart.type === 'tool-listViews';
-                              const isViewSheet = toolPart.type === 'tool-viewSheet';
+                              const isRunQuery =
+                                toolPart.type === 'tool-runQuery';
+                              const isGetSchema =
+                                toolPart.type === 'tool-getTableSchema';
+                              const isListViews =
+                                toolPart.type === 'tool-listViews';
+                              const isViewSheet =
+                                toolPart.type === 'tool-viewSheet';
 
                               // Check if viewSheet is already in progress or completed in this message
                               const hasViewSheetInMessage = message.parts.some(
@@ -572,7 +590,8 @@ export default function QweryAgentUI(props: QweryAgentUIProps) {
                               );
 
                               // Parse chart type selection if it's selectChartType tool
-                              let chartSelection: ChartTypeSelection | null = null;
+                              let chartSelection: ChartTypeSelection | null =
+                                null;
                               if (isSelectChartType && toolPart.output) {
                                 let parsedOutput: unknown = toolPart.output;
                                 if (typeof toolPart.output === 'string') {
@@ -589,7 +608,8 @@ export default function QweryAgentUI(props: QweryAgentUIProps) {
                                   'chartType' in parsedOutput &&
                                   'reasoning' in parsedOutput
                                 ) {
-                                  chartSelection = parsedOutput as ChartTypeSelection;
+                                  chartSelection =
+                                    parsedOutput as ChartTypeSelection;
                                 }
                               }
 
@@ -637,7 +657,9 @@ export default function QweryAgentUI(props: QweryAgentUIProps) {
                                   let parsedOutput: unknown = toolPart.output;
                                   if (typeof toolPart.output === 'string') {
                                     try {
-                                      parsedOutput = JSON.parse(toolPart.output);
+                                      parsedOutput = JSON.parse(
+                                        toolPart.output,
+                                      );
                                     } catch {
                                       // Not JSON, will use regular ToolOutput
                                     }
@@ -677,12 +699,16 @@ export default function QweryAgentUI(props: QweryAgentUIProps) {
                                   typeof parsedOutput.schema === 'object' &&
                                   'tables' in parsedOutput.schema
                                 ) {
-                                  schemaData = parsedOutput.schema as SchemaData;
+                                  schemaData =
+                                    parsedOutput.schema as SchemaData;
                                 }
                               }
 
                               // Parse views if it's listViews tool
-                              let viewsData: { views: Array<{ viewName: string }>; message: string } | null = null;
+                              let viewsData: {
+                                views: Array<{ viewName: string }>;
+                                message: string;
+                              } | null = null;
                               if (isListViews && toolPart.output) {
                                 let parsedOutput: unknown = toolPart.output;
                                 if (typeof toolPart.output === 'string') {
@@ -762,7 +788,9 @@ export default function QweryAgentUI(props: QweryAgentUIProps) {
                                           Chart Type Selection
                                         </h4>
                                         <div className="bg-muted/50 max-w-full min-w-0 overflow-hidden rounded-md p-4">
-                                          <ChartTypeSelector selection={chartSelection} />
+                                          <ChartTypeSelector
+                                            selection={chartSelection}
+                                          />
                                         </div>
                                       </div>
                                     ) : isGenerateChart && chartConfig ? (
@@ -770,8 +798,10 @@ export default function QweryAgentUI(props: QweryAgentUIProps) {
                                         <h4 className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
                                           Chart
                                         </h4>
-                                        <div className="bg-muted/50 max-w-full min-w-0 overflow-hidden rounded-md p-4 w-full">
-                                          <ChartRenderer chartConfig={chartConfig} />
+                                        <div className="bg-muted/50 w-full max-w-full min-w-0 overflow-hidden rounded-md p-4">
+                                          <ChartRenderer
+                                            chartConfig={chartConfig}
+                                          />
                                         </div>
                                       </div>
                                     ) : isGetSchema && schemaData ? (
@@ -780,7 +810,9 @@ export default function QweryAgentUI(props: QweryAgentUIProps) {
                                           Schema
                                         </h4>
                                         <div className="bg-muted/50 max-w-full min-w-0 overflow-hidden rounded-md p-4">
-                                          <SchemaVisualizer schema={schemaData} />
+                                          <SchemaVisualizer
+                                            schema={schemaData}
+                                          />
                                         </div>
                                       </div>
                                     ) : isRunQuery && sqlResult ? (
@@ -798,10 +830,12 @@ export default function QweryAgentUI(props: QweryAgentUIProps) {
                                         <div className="bg-muted/50 max-w-full min-w-0 overflow-hidden rounded-md p-4">
                                           <AvailableSheetsVisualizer
                                             data={{
-                                              sheets: viewsData.views.map((v) => ({
-                                                name: v.viewName,
-                                                type: 'view' as const,
-                                              })),
+                                              sheets: viewsData.views.map(
+                                                (v) => ({
+                                                  name: v.viewName,
+                                                  type: 'view' as const,
+                                                }),
+                                              ),
                                               message: viewsData.message,
                                             }}
                                             isRequestInProgress={
@@ -831,13 +865,15 @@ export default function QweryAgentUI(props: QweryAgentUIProps) {
                                             );
                                           }
                                         }}
-                                        className="min-w-0 space-y-2 p-4 scroll-mt-4"
+                                        className="min-w-0 scroll-mt-4 space-y-2 p-4"
                                       >
                                         <h4 className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
                                           Sheet View
                                         </h4>
                                         <div className="bg-muted/50 max-w-full min-w-0 overflow-hidden rounded-md p-4">
-                                          <ViewSheetVisualizer data={viewSheetData} />
+                                          <ViewSheetVisualizer
+                                            data={viewSheetData}
+                                          />
                                         </div>
                                       </div>
                                     ) : isViewSheet && toolPart.errorText ? (
@@ -850,15 +886,17 @@ export default function QweryAgentUI(props: QweryAgentUIProps) {
                                             errorText={toolPart.errorText}
                                             sheetName={
                                               toolPart.input &&
-                                              typeof toolPart.input === 'object' &&
+                                              typeof toolPart.input ===
+                                                'object' &&
                                               'sheetName' in toolPart.input &&
-                                              typeof toolPart.input.sheetName === 'string'
+                                              typeof toolPart.input
+                                                .sheetName === 'string'
                                                 ? toolPart.input.sheetName
                                                 : undefined
                                             }
-                                            availableSheets={
-                                              viewsData?.views.map((v) => v.viewName)
-                                            }
+                                            availableSheets={viewsData?.views.map(
+                                              (v) => v.viewName,
+                                            )}
                                             onRetry={(sheetName: string) => {
                                               sendMessage({
                                                 text: `View sheet "${sheetName}"`,
@@ -886,7 +924,11 @@ export default function QweryAgentUI(props: QweryAgentUIProps) {
               )}
               {status === 'submitted' && (
                 <div className="animate-in fade-in slide-in-from-bottom-4 flex items-start gap-3 duration-300">
-                  <BotAvatar size={6} isLoading={true} className="mt-1 shrink-0" />
+                  <BotAvatar
+                    size={6}
+                    isLoading={true}
+                    className="mt-1 shrink-0"
+                  />
                   <div className="flex-end flex w-full max-w-[80%] min-w-0 flex-col justify-start gap-2">
                     <Message from="assistant" className="w-full">
                       <MessageContent>
@@ -964,13 +1006,6 @@ function PromptInputInner({
 }) {
   const attachments = usePromptInputAttachments();
   const controller = usePromptInputController();
-  const [isAborting, setIsAborting] = useState(false);
-
-  useEffect(() => {
-    if (status !== 'streaming' && isAborting) {
-      setTimeout(() => setIsAborting(false), 0);
-    }
-  }, [status, isAborting]);
 
   const handleSubmit = async (message: PromptInputMessage) => {
     if (status === 'streaming' || status === 'submitted') {
@@ -984,6 +1019,7 @@ function PromptInputInner({
       return;
     }
 
+    // Clear input immediately on submit (button click or Enter press)
     controller.textInput.clear();
     setState((prev) => ({ ...prev, input: '' }));
 
@@ -1001,23 +1037,19 @@ function PromptInputInner({
         },
       );
       attachments.clear();
+      // Don't clear input here - it's already cleared on submit
+      // The input should only be cleared on explicit user action (submit button or Enter)
     } catch {
       toast.error('Failed to send message. Please try again.');
+      // On error, restore the input so user can retry
+      if (message.text) {
+        setState((prev) => ({ ...prev, input: message.text }));
+      }
     }
   };
 
   const handleStop = async () => {
-    setIsAborting(true);
-
-    const lastAssistantMessage = messages
-      .filter((m: UIMessage) => m.role === 'assistant')
-      .at(-1);
-
-    if (lastAssistantMessage) {
-      setMessages((prev) =>
-        prev.filter((m) => m.id !== lastAssistantMessage.id),
-      );
-    }
+    // Don't remove the message - keep whatever was generated so far
     stop();
   };
 
@@ -1029,10 +1061,10 @@ function PromptInputInner({
       model={state.model}
       setModel={(model) => setState((prev) => ({ ...prev, model }))}
       models={models}
-      status={isAborting ? undefined : status}
+      status={status}
       textareaRef={textareaRef}
       onStop={handleStop}
-      stopDisabled={isAborting}
+      stopDisabled={false}
       attachmentsCount={attachments.files.length}
       usage={usage}
       datasources={datasources}

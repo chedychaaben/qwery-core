@@ -31,17 +31,14 @@ export function PieChart({ chartConfig }: PieChartProps) {
 
   if (!data || data.length === 0) {
     return (
-      <div className="text-muted-foreground p-4 text-sm text-center">
+      <div className="text-muted-foreground p-4 text-center text-sm">
         No data available for chart
       </div>
     );
   }
 
   // Get colors (chart generation now uses direct hex colors)
-  const chartColors = useMemo(
-    () => getColors(colors),
-    [colors],
-  );
+  const chartColors = useMemo(() => getColors(colors), [colors]);
 
   // Create chart config for ChartContainer
   // ChartContainer uses this config to generate CSS variables (--color-${key})
@@ -88,4 +85,3 @@ export function PieChart({ chartConfig }: PieChartProps) {
     </ChartContainer>
   );
 }
-

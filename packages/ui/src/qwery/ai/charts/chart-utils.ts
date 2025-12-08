@@ -26,4 +26,3 @@ export function getColors(colors: string[]): string[] {
 export function getColorsForBarLine(colors: string[]): string[] {
   return colors;
 }
-

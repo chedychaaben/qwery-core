@@ -67,9 +67,7 @@ export class FactoryAgent {
     this.factoryActor.start();
   }
 
-  static async create(
-    opts: FactoryAgentOptions,
-  ): Promise<FactoryAgent> {
+  static async create(opts: FactoryAgentOptions): Promise<FactoryAgent> {
     const conversation = await opts.repositories.conversation.findBySlug(
       opts.conversationSlug,
     );
@@ -120,9 +118,9 @@ export class FactoryAgent {
       this.repositories.conversation,
       this.conversationSlug,
     );
-    
+
     const persistenceErrors: Error[] = [];
-    
+
     messagePersistenceService
       .persistMessages([lastMessage as UIMessage])
       .then((result) => {
@@ -303,7 +301,10 @@ export class FactoryAgent {
                         this.conversationSlug,
                       );
                     try {
-                      const result = await messagePersistenceService.persistMessages(messages);
+                      const result =
+                        await messagePersistenceService.persistMessages(
+                          messages,
+                        );
                       if (result.errors.length > 0) {
                         console.warn(
                           `Failed to persist some assistant messages for conversation ${this.conversationSlug}:`,
@@ -334,8 +335,9 @@ export class FactoryAgent {
 
       // Wait for state machine to be in idle before sending USER_INPUT
       const currentState = this.factoryActor.getSnapshot().value;
-      const isIdle = currentState === 'idle' || String(currentState).includes('idle');
-      
+      const isIdle =
+        currentState === 'idle' || String(currentState).includes('idle');
+
       if (!isIdle) {
         setTimeout(() => {
           console.log(

@@ -833,12 +833,12 @@ export const deleteViewFromRegistry = async (
   const registry = await loadViewRegistry(context);
   const initialLength = registry.length;
   const filtered = registry.filter((record) => record.viewName !== viewName);
-  
+
   if (filtered.length === initialLength) {
     // View not found in registry
     return false;
   }
-  
+
   await saveViewRegistry(context, filtered);
   return true;
 };

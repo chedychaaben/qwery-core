@@ -94,11 +94,7 @@ export class MessagePersistenceService {
           continue;
         }
         // Record other errors
-        errors.push(
-          error instanceof Error
-            ? error
-            : new Error(String(error)),
-        );
+        errors.push(error instanceof Error ? error : new Error(String(error)));
       }
     }
 

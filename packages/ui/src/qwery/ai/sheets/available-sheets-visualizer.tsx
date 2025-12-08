@@ -151,7 +151,7 @@ export function AvailableSheetsVisualizer({
   if (sheets.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center gap-3 py-8 text-center">
-        <div className="flex size-12 items-center justify-center rounded-full bg-muted/30">
+        <div className="bg-muted/30 flex size-12 items-center justify-center rounded-full">
           <FileSpreadsheetIcon className="text-muted-foreground size-6" />
         </div>
         <div className="space-y-1">
@@ -244,7 +244,10 @@ export function AvailableSheetsVisualizer({
                 isEditMode && isSelected && 'border-destructive',
                 isClicked && !isEditMode && 'border-primary',
                 isPendingDelete && 'border-destructive bg-destructive/5',
-                !isEditMode && !isClicked && !isPendingDelete && 'border-border',
+                !isEditMode &&
+                  !isClicked &&
+                  !isPendingDelete &&
+                  'border-border',
                 isDisabled && !isSelected && !isEditMode && 'opacity-60',
               )}
             >
@@ -255,7 +258,7 @@ export function AvailableSheetsVisualizer({
                   checked={isSelected}
                   onChange={() => handleToggleSelection(sheet.name)}
                   disabled={isRequestInProgress}
-                  className="size-4 cursor-pointer rounded border-gray-300 text-destructive focus:ring-destructive"
+                  className="text-destructive focus:ring-destructive size-4 cursor-pointer rounded border-gray-300"
                 />
               )}
 
@@ -331,7 +334,7 @@ export function AvailableSheetsVisualizer({
 
               {/* Actions */}
               {isEditMode ? (
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex shrink-0 items-center gap-2">
                   {onRenameSheet && !isPendingDelete && (
                     <Button
                       variant="outline"
@@ -372,7 +375,7 @@ export function AvailableSheetsVisualizer({
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-8 px-3 text-destructive border-destructive/50 hover:bg-destructive/10 hover:text-destructive"
+                          className="text-destructive border-destructive/50 hover:bg-destructive/10 hover:text-destructive h-8 px-3"
                           onClick={() => handleDeleteInEditMode(sheet.name)}
                           disabled={isRequestInProgress}
                         >

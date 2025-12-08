@@ -37,9 +37,12 @@ export interface ChartRendererProps {
  */
 function getChartColorKey(chartConfig: ChartConfig): string {
   // Create a stable key based on chart type, title, and data structure
-  const dataHash = chartConfig.data.length > 0
-    ? JSON.stringify(chartConfig.data.slice(0, 3).map(d => Object.keys(d).sort()))
-    : 'empty';
+  const dataHash =
+    chartConfig.data.length > 0
+      ? JSON.stringify(
+          chartConfig.data.slice(0, 3).map((d) => Object.keys(d).sort()),
+        )
+      : 'empty';
   return `chart-colors:${chartConfig.chartType}:${chartConfig.title || 'untitled'}:${dataHash}`;
 }
 
@@ -68,7 +71,10 @@ export function ChartRenderer({ chartConfig }: ChartRendererProps) {
       if (stored) {
         const parsed = JSON.parse(stored) as string[];
         // Validate that it's an array of strings
-        if (Array.isArray(parsed) && parsed.every(c => typeof c === 'string')) {
+        if (
+          Array.isArray(parsed) &&
+          parsed.every((c) => typeof c === 'string')
+        ) {
           return parsed.slice(0, requiredColorCount);
         }
       }
@@ -111,7 +117,13 @@ export function ChartRenderer({ chartConfig }: ChartRendererProps) {
     const trimmedColors = currentColors.slice(0, requiredColorCount);
     // If we need more colors than provided, pad with default colors
     if (trimmedColors.length < requiredColorCount) {
-      const defaultColors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7c7c', '#8dd1e1'];
+      const defaultColors = [
+        '#8884d8',
+        '#82ca9d',
+        '#ffc658',
+        '#ff7c7c',
+        '#8dd1e1',
+      ];
       const paddedColors = [
         ...trimmedColors,
         ...defaultColors.slice(trimmedColors.length, requiredColorCount),
@@ -142,7 +154,7 @@ export function ChartRenderer({ chartConfig }: ChartRendererProps) {
   const chartComponent = (() => {
     switch (chartType) {
       case 'bar':
-    return (
+        return (
           <BarChart
             chartConfig={
               modifiedChartConfig as {
@@ -157,9 +169,9 @@ export function ChartRenderer({ chartConfig }: ChartRendererProps) {
               }
             }
           />
-    );
+        );
       case 'line':
-    return (
+        return (
           <LineChart
             chartConfig={
               modifiedChartConfig as {
@@ -197,8 +209,8 @@ export function ChartRenderer({ chartConfig }: ChartRendererProps) {
           <div className="text-muted-foreground p-4 text-sm">
             Unsupported chart type: {chartType}
           </div>
-    );
-  }
+        );
+    }
   })();
 
   return (
@@ -221,4 +233,3 @@ export function ChartRenderer({ chartConfig }: ChartRendererProps) {
     </div>
   );
 }
-

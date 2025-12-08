@@ -1,5 +1,11 @@
 import { AlertCircleIcon } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../shadcn/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '../../shadcn/card';
 
 export interface ToolErrorVisualizerProps {
   errorText: string;
@@ -22,10 +28,10 @@ export function ToolErrorVisualizer({
     <Card className="border-destructive/20 bg-destructive/5">
       <CardHeader className="pb-3">
         <div className="flex items-start gap-3">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-destructive/10">
+          <div className="bg-destructive/10 flex size-10 shrink-0 items-center justify-center rounded-full">
             <AlertCircleIcon className="text-destructive size-5" />
           </div>
-          <div className="flex-1 min-w-0">
+          <div className="min-w-0 flex-1">
             <CardTitle className="text-base">{title}</CardTitle>
             <CardDescription className="mt-1">
               {typeof description === 'string' ? description : description}
@@ -35,8 +41,8 @@ export function ToolErrorVisualizer({
       </CardHeader>
       <CardContent className="space-y-4">
         {children}
-        <div className="rounded-lg border border-destructive/20 bg-background p-4">
-          <pre className="text-destructive text-sm whitespace-pre-wrap break-words">
+        <div className="border-destructive/20 bg-background rounded-lg border p-4">
+          <pre className="text-destructive text-sm break-words whitespace-pre-wrap">
             {errorText}
           </pre>
         </div>
@@ -44,4 +50,3 @@ export function ToolErrorVisualizer({
     </Card>
   );
 }
-

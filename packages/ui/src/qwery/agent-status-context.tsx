@@ -1,6 +1,13 @@
 'use client';
 
-import { createContext, useContext, useState, ReactNode, useMemo, useCallback } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useMemo,
+  useCallback,
+} from 'react';
 
 interface AgentStatusContextType {
   isProcessing: boolean;
@@ -38,4 +45,3 @@ export function useAgentStatus() {
   }
   return context;
 }
-

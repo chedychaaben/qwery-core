@@ -88,13 +88,15 @@ export const CHART_COLORS: Record<ChartType, ChartColorConfig> = {
  * Get default colors for a chart type
  */
 export function getChartColors(chartType: ChartType): string[] {
-  return CHART_COLORS[chartType]?.defaultColors || [
-    '#8884d8', // Blue
-    '#82ca9d', // Green
-    '#ffc658', // Yellow
-    '#ff7c7c', // Red
-    '#8dd1e1', // Cyan
-  ];
+  return (
+    CHART_COLORS[chartType]?.defaultColors || [
+      '#8884d8', // Blue
+      '#82ca9d', // Green
+      '#ffc658', // Yellow
+      '#ff7c7c', // Red
+      '#8dd1e1', // Cyan
+    ]
+  );
 }
 
 /**
@@ -110,4 +112,3 @@ export function getAlternativeColorScheme(
   }
   return chart.alternativeSchemes.find((s) => s.name === schemeName)?.colors;
 }
-

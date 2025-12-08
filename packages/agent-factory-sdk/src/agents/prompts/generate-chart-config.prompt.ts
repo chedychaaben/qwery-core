@@ -29,12 +29,12 @@ Chart Type Requirements:
 ${chartDef.dataFormat.description}
 Data format structure: ${JSON.stringify(chartDef.dataFormat.example, null, 2)}
 
-SQL Query: string (the SQL query that was executed)
+SQL Query: ${sqlQuery}
 
 Query Results:
-- Columns: string[] (array of column names from the query)
-- Total rows: number (total number of rows returned)
-- Data: Array<Record<string, unknown>> (array of row objects, each row is an object with column names as keys and their values)
+- Columns: ${JSON.stringify(queryResults.columns)}
+- Total rows: ${queryResults.rows.length}
+- Data (first 100 rows): ${JSON.stringify(queryResults.rows.slice(0, 100), null, 2)}
 
 Chart Configuration Guidelines:
 
@@ -61,26 +61,41 @@ ${getChartGenerationPrompt(chartType)}
   - Use hex colors like "#8884d8" or rgb colors like "rgb(136, 132, 216)"
   - Provide an array of 3-5 colors for variety
 - labels: Map column names to human-readable labels (REQUIRED - see precision guidelines below)
-  ${businessContext && businessContext.vocabulary && businessContext.vocabulary.size > 0 ? `- Use business context vocabulary to improve labels:
+  ${
+    businessContext &&
+    businessContext.vocabulary &&
+    businessContext.vocabulary.size > 0
+      ? `- Use business context vocabulary to improve labels:
   * Domain: ${businessContext.domain.domain}
   * Vocabulary mappings (technical column → business term):
     ${Array.from(businessContext.vocabulary.entries())
-      .map(([term, entry]) => `  - "${entry.businessTerm}" → [${entry.technicalTerms.join(', ')}]${entry.synonyms.length > 0 ? ` (synonyms: ${entry.synonyms.join(', ')})` : ''}`)
+      .map(
+        ([term, entry]) =>
+          `  - "${entry.businessTerm}" → [${entry.technicalTerms.join(', ')}]${entry.synonyms.length > 0 ? ` (synonyms: ${entry.synonyms.join(', ')})` : ''}`,
+      )
       .join('\n    ')}
   * When creating labels, check if a column name matches any technical term in the vocabulary
   * If found, use the business term as the label (e.g., if column is "user_id" and vocabulary maps "user" → "Customer", use "Customer" as the label)
-  * Example: Column "user_id" → Look up "user" in vocabulary → Find "Customer" → Use "Customer" as label` : businessContext ? `- Use business context to improve labels:
+  * Example: Column "user_id" → Look up "user" in vocabulary → Find "Customer" → Use "Customer" as label`
+      : businessContext
+        ? `- Use business context to improve labels:
   * Domain: ${businessContext.domain.domain}
-  * Use domain understanding to create meaningful labels` : ''}
+  * Use domain understanding to create meaningful labels`
+        : ''
+  }
 - Include chart-specific keys: ${chartDef.requirements.requiredKeys.join(', ')}
-${businessContext ? `
+${
+  businessContext
+    ? `
 **Business Context:**
 - Domain: ${businessContext.domain.domain}
 - Key entities: ${Array.from(businessContext.entities.values())
-  .map((e) => e.name)
-  .join(', ')}
+        .map((e) => e.name)
+        .join(', ')}
 - Use vocabulary mappings to translate technical column names to business-friendly labels
-- Use domain understanding to create meaningful chart titles` : ''}
+- Use domain understanding to create meaningful chart titles`
+    : ''
+}
 
 ${getAxesLabelsPrecisionGuidelines()}
 
@@ -98,10 +113,11 @@ Output Format (strict JSON):
   }
 }
 
+**IMPORTANT**: You MUST transform the actual query results data provided above into the chart data format. Do NOT return an empty data array. Use the actual rows from the query results to populate the data array. Each row in the data array should be an object with keys matching the xKey and yKey values you specify in the config.
+
 Transform the query results into this format now.
 
 Current date: ${new Date().toISOString()}
 Version: 1.0.0
 `;
 };
-

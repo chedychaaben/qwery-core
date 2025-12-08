@@ -1,6 +1,7 @@
 import {
   getChartSelectionPrompts,
   getChartsInfoForPrompt,
+  getChartTypesUnionString,
 } from '../config/supported-charts';
 
 export const SELECT_CHART_TYPE_PROMPT = (
@@ -14,7 +15,11 @@ export const SELECT_CHART_TYPE_PROMPT = (
     domain: string;
     entities: Array<{ name: string; columns: string[] }>;
     relationships: Array<{ from: string; to: string; join: string }>;
-    vocabulary?: Array<{ businessTerm: string; technicalTerms: string[]; synonyms: string[] }>;
+    vocabulary?: Array<{
+      businessTerm: string;
+      technicalTerms: string[];
+      synonyms: string[];
+    }>;
   } | null,
 ) => `You are a Chart Type Selection Agent. Your task is to analyze the user's request, SQL query, and query results to determine the best chart type for visualization.
 
@@ -30,34 +35,44 @@ Analysis Guidelines:
 - Look for time/date columns → suggests line chart
 - Look for categorical groupings → suggests bar chart
 - Look for proportions/percentages → suggests pie chart
-${businessContext ? `- Use business context to understand data semantics:
+- Use the chart type descriptions above to match the data characteristics
+${
+  businessContext
+    ? `- Use business context to understand data semantics:
   * Domain: ${businessContext.domain}
-  * Key entities: ${businessContext.entities.map(e => e.name).join(', ')}
+  * Key entities: ${businessContext.entities.map((e) => e.name).join(', ')}
   * Use entity relationships to understand data connections
   * If query involves time-based entities or temporal relationships → prefer line chart
   * If query involves categorical entities or comparisons → prefer bar chart
   * If query involves proportions or parts of a whole → prefer pie chart
-  ${businessContext.vocabulary && businessContext.vocabulary.length > 0 ? `* Vocabulary mappings (use to understand column meanings):
-    ${businessContext.vocabulary.map(v => `  - "${v.businessTerm}" → [${v.technicalTerms.join(', ')}]${v.synonyms.length > 0 ? ` (synonyms: ${v.synonyms.join(', ')})` : ''}`).join('\n    ')}` : ''}` : ''}
+  ${
+    businessContext.vocabulary && businessContext.vocabulary.length > 0
+      ? `* Vocabulary mappings (use to understand column meanings):
+    ${businessContext.vocabulary.map((v) => `  - "${v.businessTerm}" → [${v.technicalTerms.join(', ')}]${v.synonyms.length > 0 ? ` (synonyms: ${v.synonyms.join(', ')})` : ''}`).join('\n    ')}`
+      : ''
+  }`
+    : ''
+}
 
-User Input: string (the original user request)
+User Input: ${userInput}
 
-SQL Query: string (the SQL query that was executed)
+SQL Query: ${sqlQuery}
 
-Query Results Structure:
-- Columns: string[] (array of column names)
-- Row count: number (total number of rows returned)
-- Data: Array<Record<string, unknown>> (array of row objects, each with column names as keys)
+Query Results:
+- Columns: ${JSON.stringify(queryResults.columns)}
+- Total rows: ${queryResults.rows.length}
+- Data (first 20 rows): ${JSON.stringify(queryResults.rows.slice(0, 20), null, 2)}
+
+**IMPORTANT**: Use the actual SQL query, user input, and query results data provided above to make your selection. Do not say "No SQL query or result data was provided" - the data is provided above.
 
 Based on this analysis, select the most appropriate chart type and provide reasoning.
 
 Output Format:
 {
-  "chartType": "bar" | "line" | "pie",
+  "chartType": ${getChartTypesUnionString()},
   "reasoning": "string explaining why this chart type was selected"
 }
 
 Current date: ${new Date().toISOString()}
 Version: 1.0.0
 `;
-

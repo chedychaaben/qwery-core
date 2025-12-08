@@ -22,15 +22,15 @@ export function ViewSheetVisualizer({ data }: ViewSheetVisualizerProps) {
     <div className="min-w-0 space-y-3 p-4">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
-        <div className="flex items-start gap-3 min-w-0 flex-1">
-          <div className="flex size-9 items-center justify-center rounded-lg border-2 border-foreground/10 shrink-0">
-            <SheetIcon className="size-4.5 text-foreground" />
+        <div className="flex min-w-0 flex-1 items-start gap-3">
+          <div className="border-foreground/10 flex size-9 shrink-0 items-center justify-center rounded-lg border-2">
+            <SheetIcon className="text-foreground size-4.5" />
           </div>
-          <div className="flex flex-col gap-1 min-w-0 flex-1">
-            <h3 className="text-base font-semibold text-foreground truncate">
+          <div className="flex min-w-0 flex-1 flex-col gap-1">
+            <h3 className="text-foreground truncate text-base font-semibold">
               {sheetName}
             </h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               {isPartial
                 ? `Showing ${displayedRows.toLocaleString()} of ${totalRows.toLocaleString()} rows`
                 : `${totalRows.toLocaleString()} row${totalRows !== 1 ? 's' : ''}`}
@@ -40,10 +40,9 @@ export function ViewSheetVisualizer({ data }: ViewSheetVisualizerProps) {
       </div>
 
       {/* Data Grid */}
-      <div className="rounded-lg border border-border/60 overflow-hidden shadow-sm">
+      <div className="border-border/60 overflow-hidden rounded-lg border shadow-sm">
         <DataGrid columns={columns} rows={rows} />
       </div>
     </div>
   );
 }
-

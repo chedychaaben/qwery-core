@@ -22,7 +22,7 @@ export function ProjectConversationHistory() {
   const currentSlug = conversationSlugMatch ? conversationSlugMatch[1] : null;
   const { repositories, workspace } = useWorkspace();
   const queryClient = useQueryClient();
-  
+
   // Get agent processing status
   const { isProcessing } = useAgentStatus();
 
@@ -72,8 +72,15 @@ export function ProjectConversationHistory() {
   );
   const currentConversationId = currentConversation?.id;
 
-  const mappedConversations = conversations.map(
-    (conversation: Conversation) => ({
+  const mappedConversations = conversations
+    .sort((a, b) => {
+      const dateA =
+        a.updatedAt instanceof Date ? a.updatedAt : new Date(a.updatedAt);
+      const dateB =
+        b.updatedAt instanceof Date ? b.updatedAt : new Date(b.updatedAt);
+      return dateB.getTime() - dateA.getTime(); // Most recent first
+    })
+    .map((conversation: Conversation) => ({
       id: conversation.id,
       slug: conversation.slug,
       title: conversation.title,
@@ -81,8 +88,11 @@ export function ProjectConversationHistory() {
         conversation.createdAt instanceof Date
           ? conversation.createdAt
           : new Date(conversation.createdAt),
-    }),
-  );
+      updatedAt:
+        conversation.updatedAt instanceof Date
+          ? conversation.updatedAt
+          : new Date(conversation.updatedAt),
+    }));
 
   const onConversationSelect = (conversationSlug: string) => {
     navigate(createPath(pathsConfig.app.conversation, conversationSlug));
@@ -103,12 +113,15 @@ export function ProjectConversationHistory() {
     });
   };
 
-  const onConversationEdit = async (conversationId: string, newTitle: string) => {
+  const onConversationEdit = async (
+    conversationId: string,
+    newTitle: string,
+  ) => {
     const conversation = conversations.find((c) => c.id === conversationId);
     if (!conversation) return;
 
     const trimmedTitle = newTitle.trim();
-    
+
     if (!trimmedTitle || trimmedTitle.length < 5) {
       toast.error('Conversation title must be at least 5 character long');
       return;

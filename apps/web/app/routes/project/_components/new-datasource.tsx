@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Link, useParams } from 'react-router';
 
@@ -7,6 +7,7 @@ import {
   ChevronRightIcon,
   MagnifyingGlassIcon,
 } from '@radix-ui/react-icons';
+import { Database } from 'lucide-react';
 
 import { Badge } from '@qwery/ui/badge';
 import { Button } from '@qwery/ui/button';
@@ -52,6 +53,7 @@ export function NewDatasource({
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [shouldAnimate, setShouldAnimate] = useState(false);
+  const [failedLogos, setFailedLogos] = useState<Set<string>>(new Set());
 
   const filterTags = ['SQL', 'NoSQL', 'SaaS', 'Files'];
 
@@ -111,6 +113,10 @@ export function NewDatasource({
   const goToPage = (page: number) => {
     setCurrentPage(Math.max(1, Math.min(page, totalPages)));
   };
+
+  const handleLogoError = useCallback((datasourceId: string) => {
+    setFailedLogos((prev) => new Set(prev).add(datasourceId));
+  }, []);
 
   return (
     <Card className="w-full">
@@ -194,24 +200,34 @@ export function NewDatasource({
         ) : (
           <>
             <div className="grid grid-cols-5 gap-3">
-              {paginatedDatasources.map((datasource) => (
-                <Link
-                  key={datasource.id}
-                  to={createDatasourcePath(project_id, datasource.id)}
-                  className="hover:bg-accent/50 group flex cursor-pointer flex-col items-center gap-2 rounded-lg p-3 transition-all"
-                >
-                  {datasource.logo && (
-                    <img
-                      src={datasource.logo}
-                      alt={datasource.name}
-                      className="h-14 w-14 rounded object-contain transition-transform group-hover:scale-105"
-                    />
-                  )}
-                  <h3 className="text-center text-sm leading-tight font-medium">
-                    {datasource.name}
-                  </h3>
-                </Link>
-              ))}
+              {paginatedDatasources.map((datasource) => {
+                const hasFailed = failedLogos.has(datasource.id);
+                const showLogo = datasource.logo && !hasFailed;
+
+                return (
+                  <Link
+                    key={datasource.id}
+                    to={createDatasourcePath(project_id, datasource.id)}
+                    className="hover:bg-accent/50 group flex cursor-pointer flex-col items-center gap-2 rounded-lg p-3 transition-all"
+                  >
+                    {showLogo ? (
+                      <img
+                        src={datasource.logo}
+                        alt={datasource.name}
+                        className="h-14 w-14 rounded object-contain transition-transform group-hover:scale-105"
+                        onError={() => handleLogoError(datasource.id)}
+                      />
+                    ) : (
+                      <div className="bg-muted flex h-14 w-14 items-center justify-center rounded transition-transform group-hover:scale-105">
+                        <Database className="text-muted-foreground h-7 w-7" />
+                      </div>
+                    )}
+                    <h3 className="text-center text-sm leading-tight font-medium">
+                      {datasource.name}
+                    </h3>
+                  </Link>
+                );
+              })}
             </div>
             {totalPages > 1 && (
               <div className="mt-3 flex items-center justify-between border-t pt-2">

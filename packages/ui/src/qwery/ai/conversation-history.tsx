@@ -38,6 +38,7 @@ export interface Conversation {
   slug: string;
   title: string;
   createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface ConversationHistoryProps {
@@ -99,7 +100,7 @@ function groupConversationsByTime(
   const groups: Record<string, Conversation[]> = {};
 
   conversations.forEach((conversation) => {
-    const group = formatRelativeDate(conversation.createdAt);
+    const group = formatRelativeDate(conversation.updatedAt);
     if (!groups[group]) {
       groups[group] = [];
     }
@@ -109,7 +110,7 @@ function groupConversationsByTime(
   Object.keys(groups).forEach((key) => {
     const group = groups[key];
     if (group) {
-      group.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      group.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
     }
   });
 
@@ -249,7 +250,9 @@ export function ConversationHistory({
 
   const handleSaveEdit = (conversationId: string) => {
     const trimmedValue = editValue.trim();
-    const currentTitle = conversations.find(c => c.id === conversationId)?.title;
+    const currentTitle = conversations.find(
+      (c) => c.id === conversationId,
+    )?.title;
 
     if (!trimmedValue || trimmedValue.length < 1) {
       return;
@@ -315,7 +318,7 @@ export function ConversationHistory({
             <h2 className="font-semibold">Conversations</h2>
           </div>
         </div>
-        <div className="mb-3 border-b flex items-center gap-2 p-2 [&_[cmdk-input-wrapper]]:border-0 [&_[cmdk-input-wrapper]]:flex-1 [&_[cmdk-input-wrapper]]:min-w-0">
+        <div className="mb-3 flex items-center gap-2 border-b p-2 [&_[cmdk-input-wrapper]]:min-w-0 [&_[cmdk-input-wrapper]]:flex-1 [&_[cmdk-input-wrapper]]:border-0">
           <CommandInput placeholder="Search conversations..." />
           {isEditMode ? (
             <>
@@ -323,7 +326,7 @@ export function ConversationHistory({
                 size="sm"
                 variant="destructive"
                 onClick={handleDeleteSelected}
-                className="gap-1.5 shrink-0"
+                className="shrink-0 gap-1.5"
                 disabled={selectedIds.size === 0}
               >
                 <Trash2 className="size-3.5" />
@@ -333,7 +336,7 @@ export function ConversationHistory({
                 size="sm"
                 variant="outline"
                 onClick={handleToggleEditMode}
-                className="gap-1.5 shrink-0"
+                className="shrink-0 gap-1.5"
               >
                 Cancel
               </Button>
@@ -344,7 +347,7 @@ export function ConversationHistory({
                 size="sm"
                 variant="outline"
                 onClick={handleNewConversation}
-                className="gap-1.5 shrink-0"
+                className="shrink-0 gap-1.5"
               >
                 <Plus className="size-3.5" />
                 New
@@ -353,7 +356,7 @@ export function ConversationHistory({
                 size="sm"
                 variant="outline"
                 onClick={handleToggleEditMode}
-                className="gap-1.5 shrink-0"
+                className="shrink-0 gap-1.5"
               >
                 <Edit className="size-3.5" />
                 Edit
@@ -369,7 +372,7 @@ export function ConversationHistory({
               </div>
               <div className="text-center">
                 <p className="text-sm font-medium">No conversations found</p>
-                <p className="text-muted-foreground text-xs mt-1">
+                <p className="text-muted-foreground mt-1 text-xs">
                   Start a new conversation to get started
                 </p>
               </div>
@@ -386,7 +389,7 @@ export function ConversationHistory({
               <div key={groupKey} className="space-y-1">
                 <div className="flex items-center gap-2 px-4 py-2">
                   <div className="bg-border h-px flex-1" />
-                  <span className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">
+                  <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                     {groupKey}
                   </span>
                   <div className="bg-border h-px flex-1" />
@@ -409,12 +412,16 @@ export function ConversationHistory({
                           }
                         }}
                         className={cn(
-                          'group relative mx-2 my-0.5 rounded-md transition-all border',
+                          'group relative mx-2 my-0.5 rounded-md border transition-all',
                           'border-border/50 hover:border-border hover:bg-accent/50',
                           isCurrent &&
-                          'bg-primary/10 border-primary/20 hover:border-primary/30',
-                          isEditMode && isSelected && 'border-primary bg-primary/5 hover:border-primary/80',
-                          isEditMode && !isSelected && 'border-border/50 hover:border-border',
+                            'bg-primary/10 border-primary/20 hover:border-primary/30',
+                          isEditMode &&
+                            isSelected &&
+                            'border-primary bg-primary/5 hover:border-primary/80',
+                          isEditMode &&
+                            !isSelected &&
+                            'border-border/50 hover:border-border',
                           'data-[selected=true]:bg-accent',
                         )}
                       >
@@ -423,7 +430,9 @@ export function ConversationHistory({
                             {isEditMode ? (
                               <Checkbox
                                 checked={isSelected}
-                                onCheckedChange={() => handleToggleSelect(conversation.id)}
+                                onCheckedChange={() =>
+                                  handleToggleSelect(conversation.id)
+                                }
                                 onClick={(e) => e.stopPropagation()}
                                 className="size-4 shrink-0"
                               />
@@ -456,7 +465,7 @@ export function ConversationHistory({
                                 }}
                                 onClick={(e) => e.stopPropagation()}
                                 className={cn(
-                                  'flex-1 bg-background border rounded px-2 py-1 text-sm outline-none focus:ring-1',
+                                  'bg-background flex-1 rounded border px-2 py-1 text-sm outline-none focus:ring-1',
                                   editValue.trim().length < 1
                                     ? 'border-destructive focus:ring-destructive'
                                     : 'border-input focus:ring-ring',
@@ -497,22 +506,25 @@ export function ConversationHistory({
                                     'truncate text-sm font-medium transition-all duration-300',
                                     isCurrent && 'text-primary',
                                     animatingIds.has(conversation.id) &&
-                                    'animate-in fade-in-0 slide-in-from-left-2 text-primary',
+                                      'animate-in fade-in-0 slide-in-from-left-2 text-primary',
                                   )}
                                 >
                                   {conversation.title}
                                 </span>
-                                <span className="text-muted-foreground text-xs truncate">
-                                  {formatRelativeTime(conversation.createdAt)}
+                                <span className="text-muted-foreground truncate text-xs">
+                                  {formatRelativeTime(conversation.updatedAt)}
                                 </span>
                               </div>
                               {!isEditMode && (
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    handleStartEdit(conversation.id, conversation.title);
+                                    handleStartEdit(
+                                      conversation.id,
+                                      conversation.title,
+                                    );
                                   }}
-                                  className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground hover:bg-accent rounded p-1 transition-all shrink-0"
+                                  className="text-muted-foreground hover:text-foreground hover:bg-accent shrink-0 rounded p-1 opacity-0 transition-all group-hover:opacity-100"
                                 >
                                   <Pencil className="size-3" />
                                 </button>
@@ -520,7 +532,7 @@ export function ConversationHistory({
                               {isCurrent && (
                                 <div className="flex shrink-0 items-center">
                                   {isProcessing ? (
-                                    <div className="bg-yellow-500 size-2 rounded-full animate-pulse shadow-sm shadow-yellow-500/50" />
+                                    <div className="size-2 animate-pulse rounded-full bg-yellow-500 shadow-sm shadow-yellow-500/50" />
                                   ) : (
                                     <div className="bg-primary size-1.5 rounded-full" />
                                   )}
@@ -544,7 +556,8 @@ export function ConversationHistory({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              Delete {selectedIds.size === 1 ? 'conversation' : 'conversations'}?
+              Delete {selectedIds.size === 1 ? 'conversation' : 'conversations'}
+              ?
             </AlertDialogTitle>
             <AlertDialogDescription>
               {selectedIds.size === 1 ? (
@@ -555,9 +568,9 @@ export function ConversationHistory({
                 </>
               ) : (
                 <>
-                  Are you sure you want to delete {selectedIds.size} conversations?
-                  This action cannot be undone and will permanently remove these
-                  conversations and all their messages.
+                  Are you sure you want to delete {selectedIds.size}{' '}
+                  conversations? This action cannot be undone and will
+                  permanently remove these conversations and all their messages.
                 </>
               )}
             </AlertDialogDescription>

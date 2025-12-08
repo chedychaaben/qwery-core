@@ -16,23 +16,23 @@ export { createAzure } from '@ai-sdk/azure';
 
 const baseModels = [
   {
-    name: 'azure/gpt-5-mini',
+    name: 'GPT-5 Mini',
     value: 'azure/gpt-5-mini',
   },
   {
-    name: 'ollama/deepseek-r1:8b',
+    name: 'DeepSeek R1 (8B)',
     value: 'ollama/deepseek-r1:8b',
   },
   {
-    name: 'webllm/Llama-3.1-8B-Instruct-q4f32_1-MLC',
+    name: 'Llama 3.1 (8B)',
     value: 'webllm/Llama-3.1-8B-Instruct-q4f32_1-MLC',
   },
   {
-    name: 'transformer-browser/SmolLM2-360M-Instruct',
+    name: 'SmolLM2 (360M)',
     value: 'transformer-browser/SmolLM2-360M-Instruct',
   },
   {
-    name: 'browser/built-in',
+    name: 'Built-in Browser',
     value: 'browser/built-in',
   },
 ];

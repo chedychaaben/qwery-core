@@ -20,4 +20,3 @@ export function useGetConversationsByProject(
     refetchInterval: 3000,
   });
 }
-

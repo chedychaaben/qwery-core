@@ -21,7 +21,14 @@ export type QweryContextProps = {
   modelId?: string;
 };
 export default function QweryContext(props: QweryContextProps) {
-  const percentage = (props.usedTokens / props.maxTokens) * 100;
+  const usedTokens = Number(props.usedTokens) || 0;
+  const maxTokens = Number(props.maxTokens) || 0;
+
+  const percentage =
+    maxTokens > 0 && !isNaN(usedTokens) && !isNaN(maxTokens)
+      ? (usedTokens / maxTokens) * 100
+      : 0;
+
   const colorClass =
     percentage >= 90
       ? 'text-red-500'
@@ -31,10 +38,10 @@ export default function QweryContext(props: QweryContextProps) {
 
   return (
     <Context
-      maxTokens={props.maxTokens}
+      maxTokens={maxTokens}
       modelId={props.modelId}
       usage={props.usage}
-      usedTokens={props.usedTokens}
+      usedTokens={usedTokens}
     >
       <ContextTrigger className={colorClass} />
       <ContextContent>

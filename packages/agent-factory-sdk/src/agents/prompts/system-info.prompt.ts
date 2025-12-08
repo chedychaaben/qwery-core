@@ -26,4 +26,3 @@ ${userInput}
 Current date: ${new Date().toISOString()}
 version: 1.1.0
 `;
-

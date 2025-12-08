@@ -8,6 +8,11 @@ function parseModelName(modelString: string): {
   providerId: string;
   modelName: string;
 } {
+  if (!modelString || typeof modelString !== 'string') {
+    throw new Error(
+      `[AgentFactory] Invalid model: modelString must be a non-empty string, got '${modelString}'`,
+    );
+  }
   const parts = modelString.split('/');
   if (parts.length !== 2) {
     throw new Error(
@@ -91,8 +96,13 @@ async function createProvider(
 }
 
 export async function resolveModel(
-  modelString: string,
+  modelString: string | undefined,
 ): Promise<LanguageModel> {
+  if (!modelString) {
+    throw new Error(
+      '[AgentFactory] Model string is required but was undefined or empty',
+    );
+  }
   const { providerId, modelName } = parseModelName(modelString);
   const provider = await createProvider(providerId, modelName);
   return provider.resolveModel(modelName);

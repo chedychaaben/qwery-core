@@ -73,4 +73,3 @@ export const listAvailableSheets = async (
     instance.closeSync();
   }
 };
-

@@ -133,6 +133,12 @@ export function getSupportedChartTypes(): ChartType[] {
   return Object.keys(SUPPORTED_CHARTS) as ChartType[];
 }
 
+export function getChartTypesUnionString(): string {
+  return getSupportedChartTypes()
+    .map((type) => `"${type}"`)
+    .join(' | ');
+}
+
 /**
  * Get chart definition by type
  */
@@ -238,4 +244,3 @@ export function getAxesLabelsPrecisionGuidelines(): string {
    - Keep labels concise but descriptive (aim for 2-4 words)
 `;
 }
-

@@ -34,7 +34,7 @@ export type ToolProps = ComponentProps<typeof Collapsible>;
 export const Tool = ({ className, ...props }: ToolProps) => (
   <Collapsible
     className={cn(
-      'not-prose mb-4 flex w-full max-w-full flex-col rounded-md border overflow-hidden',
+      'not-prose mb-4 flex w-full max-w-full flex-col overflow-hidden rounded-md border',
       className,
     )}
     {...props}
@@ -46,19 +46,6 @@ export type ToolHeaderProps = {
   type: ToolUIPart['type'];
   state: ToolUIPart['state'];
   className?: string;
-};
-
-const getStatusBadge = (status: ToolUIPart['state']) => {
-  const labels: Record<string, string> = {
-    'input-streaming': 'Pending',
-    'input-available': 'Running',
-    'approval-requested': 'Awaiting Approval',
-    'approval-responded': 'Responded',
-    'output-available': 'Completed',
-    'output-error': 'Error',
-    'output-denied': 'Denied',
-  };
-  return labels[status] ?? status;
 };
 
 const getUserFriendlyToolName = (type: string): string => {
@@ -118,19 +105,22 @@ const getStatusConfig = (status: ToolUIPart['state']) => {
       label: 'Awaiting Approval',
       icon: <ClockIcon className="size-3" />,
       variant: 'outline',
-      className: 'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950/20 dark:text-yellow-500 dark:border-yellow-800',
+      className:
+        'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950/20 dark:text-yellow-500 dark:border-yellow-800',
     },
     'approval-responded': {
       label: 'Responded',
       icon: <CheckCircleIcon className="size-3" />,
       variant: 'default',
-      className: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/20 dark:text-blue-500 dark:border-blue-800',
+      className:
+        'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/20 dark:text-blue-500 dark:border-blue-800',
     },
     'output-available': {
       label: 'Completed',
       icon: <CheckCircleIcon className="size-3" />,
       variant: 'default',
-      className: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-500 dark:border-emerald-800',
+      className:
+        'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-500 dark:border-emerald-800',
     },
     'output-error': {
       label: 'Error',
@@ -142,7 +132,8 @@ const getStatusConfig = (status: ToolUIPart['state']) => {
       label: 'Denied',
       icon: <XCircleIcon className="size-3" />,
       variant: 'outline',
-      className: 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/20 dark:text-orange-500 dark:border-orange-800',
+      className:
+        'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/20 dark:text-orange-500 dark:border-orange-800',
     },
   };
 
@@ -179,24 +170,37 @@ export const ToolHeader = ({
   type,
   state,
   ...props
-}: ToolHeaderProps) => (
+}: ToolHeaderProps) => {
+  const statusConfig = getStatusConfig(state);
+  const toolIcon = getToolIcon(type);
+  const toolName = title ?? getUserFriendlyToolName(type);
+
+  return (
     <CollapsibleTrigger
       className={cn(
-      'sticky top-0 z-10 flex w-full items-center justify-between gap-4 border-b bg-background p-3',
+        'bg-background sticky top-0 z-10 flex w-full items-center justify-between gap-4 border-b p-3',
         className,
       )}
       {...props}
     >
-    <div className="flex items-center gap-2">
-      <WrenchIcon className="text-muted-foreground size-4" />
-      <span className="text-sm font-medium">
-        {title ?? type.split('-').slice(1).join('-')}
-      </span>
-      {getStatusBadge(state)}
-        </div>
-    <ChevronDownIcon className="text-muted-foreground size-4 transition-transform group-data-[state=open]:rotate-180" />
+      <div className="flex min-w-0 items-center gap-2">
+        {toolIcon}
+        <span className="truncate text-sm font-medium">{toolName}</span>
+        <Badge
+          variant={statusConfig.variant}
+          className={cn(
+            'flex shrink-0 items-center gap-1.5',
+            statusConfig.className,
+          )}
+        >
+          {statusConfig.icon}
+          <span>{statusConfig.label}</span>
+        </Badge>
+      </div>
+      <ChevronDownIcon className="text-muted-foreground size-4 shrink-0 transition-transform group-data-[state=open]:rotate-180" />
     </CollapsibleTrigger>
   );
+};
 
 export type ToolContentProps = ComponentProps<typeof CollapsibleContent>;
 
@@ -215,18 +219,18 @@ export type ToolInputProps = ComponentProps<'div'> & {
 };
 
 export const ToolInput = ({ className, input, ...props }: ToolInputProps) => (
-    <div
-      className={cn('min-w-0 space-y-2 overflow-hidden p-4', className)}
-      {...props}
-    >
+  <div
+    className={cn('min-w-0 space-y-2 overflow-hidden p-4', className)}
+    {...props}
+  >
     <h4 className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-          Parameters
-        </h4>
+      Parameters
+    </h4>
     <div className="bg-muted/50 max-w-full min-w-0 overflow-hidden rounded-md">
       <CodeBlock code={JSON.stringify(input, null, 2)} language="json" />
-        </div>
     </div>
-  );
+  </div>
+);
 
 export type ToolOutputProps = ComponentProps<'div'> & {
   output: ToolUIPart['output'];
@@ -247,21 +251,24 @@ export const ToolOutput = ({
 
   // Special handling for testConnection tool
   if (isTestConnection && !errorText) {
-    const result = output === true || output === 'true' || String(output).toLowerCase() === 'true';
+    const result =
+      output === true ||
+      output === 'true' ||
+      String(output).toLowerCase() === 'true';
     return (
       <div className={cn('min-w-0 p-5', className)} {...props}>
         <div className="flex items-center gap-3">
           {result ? (
             <>
-              <CheckCircleIcon className="size-5 text-emerald-600 shrink-0" />
+              <CheckCircleIcon className="size-5 shrink-0 text-emerald-600" />
               <span className="text-sm font-medium text-emerald-600">
                 Connection successful
               </span>
             </>
           ) : (
             <>
-              <XCircleIcon className="size-5 text-destructive shrink-0" />
-              <span className="text-sm font-medium text-destructive">
+              <XCircleIcon className="text-destructive size-5 shrink-0" />
+              <span className="text-destructive text-sm font-medium">
                 Connection failed
               </span>
             </>
@@ -289,11 +296,11 @@ export const ToolOutput = ({
         </h4>
         <div className="bg-destructive/10 border-destructive/20 max-w-full min-w-0 rounded-md border p-4">
           <div className="flex items-start gap-2">
-          <XCircleIcon className="text-destructive mt-0.5 size-4 shrink-0" />
-          <div className="min-w-0 flex-1">
+            <XCircleIcon className="text-destructive mt-0.5 size-4 shrink-0" />
+            <div className="min-w-0 flex-1">
               <pre className="text-destructive m-0 font-sans text-sm wrap-break-word whitespace-pre-wrap">
-              {errorText}
-            </pre>
+                {errorText}
+              </pre>
             </div>
           </div>
         </div>
@@ -304,13 +311,11 @@ export const ToolOutput = ({
   return (
     <div className={cn('min-w-0 space-y-2 p-4', className)} {...props}>
       <h4 className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-          Result
-        </h4>
+        Result
+      </h4>
       <div className="bg-muted/50 max-w-full min-w-0 overflow-hidden rounded-md">
         {Output}
       </div>
     </div>
   );
 };
-
-

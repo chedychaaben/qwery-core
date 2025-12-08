@@ -35,7 +35,8 @@ export async function generateSheetName(
   try {
     const timeoutPromise = new Promise<never>((_, reject) => {
       setTimeout(
-        () => reject(new Error('Sheet name generation timeout after 10 seconds')),
+        () =>
+          reject(new Error('Sheet name generation timeout after 10 seconds')),
         10000,
       );
     });
@@ -62,4 +63,3 @@ export async function generateSheetName(
     return currentName;
   }
 }
-

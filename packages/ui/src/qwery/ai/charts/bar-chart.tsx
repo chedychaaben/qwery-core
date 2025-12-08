@@ -2,7 +2,13 @@
 
 import { useContext, useMemo } from 'react';
 import * as React from 'react';
-import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, Label } from 'recharts';
+import {
+  BarChart as RechartsBarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Label,
+} from 'recharts';
 import {
   ChartContainer,
   ChartTooltip,
@@ -33,36 +39,75 @@ export function BarChart({ chartConfig }: BarChartProps) {
 
   if (!data || data.length === 0) {
     return (
-      <div className="text-muted-foreground p-4 text-sm text-center">
+      <div className="text-muted-foreground p-4 text-center text-sm">
         No data available for chart
       </div>
     );
   }
 
-  // Get colors (chart generation now uses direct hex colors)
-  // Bar charts use colors directly from config without default fallback
-  const chartColors = useMemo(
-    () => getColorsForBarLine(colors),
-    [colors],
-  );
+  // Validate and fix data keys if needed
+  const { actualXKey, actualYKey } = useMemo(() => {
+    if (!data || data.length === 0) {
+      return { actualXKey: xKey, actualYKey: yKey };
+    }
+    const firstItem = data[0];
+    if (firstItem && typeof firstItem === 'object') {
+      const hasXKey = xKey in firstItem;
+      const hasYKey = yKey in firstItem;
+      if (hasXKey && hasYKey) {
+        return { actualXKey: xKey, actualYKey: yKey };
+      }
+      // Keys don't match, try to find alternatives
+      const availableKeys = Object.keys(firstItem);
+      // Try to find alternative keys
+      const altXKey =
+        availableKeys.find(
+          (k) =>
+            k.toLowerCase().includes('name') ||
+            k.toLowerCase().includes('category') ||
+            k.toLowerCase().includes('label'),
+        ) || availableKeys[0];
+      const altYKey =
+        availableKeys.find(
+          (k) =>
+            k.toLowerCase().includes('value') ||
+            k.toLowerCase().includes('count') ||
+            k.toLowerCase().includes('amount'),
+        ) ||
+        availableKeys[1] ||
+        availableKeys[0];
+      if (altXKey && altYKey && altXKey !== altYKey) {
+        return { actualXKey: altXKey, actualYKey: altYKey };
+      }
+    }
+    return { actualXKey: xKey, actualYKey: yKey };
+  }, [data, xKey, yKey]);
 
-  // Create chart config for ChartContainer
-  // ChartContainer uses this config to generate CSS variables (--color-${key})
-  // which are used by ChartTooltipContent for consistent theming
+  const chartColors = useMemo(() => {
+    const colorsArray = getColorsForBarLine(colors);
+    if (colorsArray.length === 0) {
+      return ['#8884d8']; // Default blue color
+    }
+    return colorsArray;
+  }, [colors]);
+
   const chartConfigForContainer = useMemo(() => {
     const configObj: Record<string, { label?: string; color?: string }> = {};
-    if (yKey) {
-      configObj[yKey] = {
-        label: labels?.[yKey] || labels?.value || 'Value',
+    if (actualYKey) {
+      configObj[actualYKey] = {
+        label:
+          labels?.[actualYKey] || labels?.[yKey] || labels?.value || 'Value',
         color: chartColors[0],
       };
     }
     return configObj;
-  }, [yKey, chartColors, labels]);
+  }, [actualYKey, yKey, chartColors, labels]);
 
   // Get axis labels
-  const xAxisLabel = labels?.[xKey] || labels?.name || xKey;
-  const yAxisLabel = labels?.[yKey] || labels?.value || 'Value';
+  const xAxisLabel =
+    labels?.[actualXKey] || labels?.[xKey] || labels?.name || actualXKey;
+  const yAxisLabel =
+    labels?.[actualYKey] || labels?.[yKey] || labels?.value || 'Value';
 
   // Recharts color usage:
   // - Bar component uses `fill` prop for bar color
@@ -71,7 +116,7 @@ export function BarChart({ chartConfig }: BarChartProps) {
     <ChartContainer config={chartConfigForContainer}>
       <RechartsBarChart data={data} key={`bar-${showAxisLabels}`}>
         <XAxis
-          dataKey={xKey}
+          dataKey={actualXKey}
           tickLine={false}
           axisLine={showAxisLabels}
           tickMargin={8}
@@ -86,11 +131,7 @@ export function BarChart({ chartConfig }: BarChartProps) {
             />
           ) : null}
         </XAxis>
-        <YAxis
-          tickLine={false}
-          axisLine={showAxisLabels}
-          tickMargin={8}
-        >
+        <YAxis tickLine={false} axisLine={showAxisLabels} tickMargin={8}>
           {showAxisLabels ? (
             <Label
               key="y-label"
@@ -105,7 +146,10 @@ export function BarChart({ chartConfig }: BarChartProps) {
           cursor={false}
           content={<ChartTooltipContent indicator="line" />}
         />
-        <Bar dataKey={yKey} fill={chartColors[0] || colors[0]} />
+        <Bar
+          dataKey={actualYKey}
+          fill={chartColors[0] || colors?.[0] || '#8884d8'}
+        />
       </RechartsBarChart>
     </ChartContainer>
   );

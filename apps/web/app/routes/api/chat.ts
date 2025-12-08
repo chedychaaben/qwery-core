@@ -42,6 +42,7 @@ const repositories = await createRepositories();
 
 async function getOrCreateAgent(
   conversationSlug: string,
+  model: string = 'azure/gpt-5-mini',
 ): Promise<FactoryAgent> {
   let agent = agents.get(conversationSlug);
   if (agent) {
@@ -56,9 +57,8 @@ async function getOrCreateAgent(
 
   const creationPromise = (async () => {
     try {
-      const conversation = await repositories.conversation.findBySlug(
-        conversationSlug,
-      );
+      const conversation =
+        await repositories.conversation.findBySlug(conversationSlug);
       if (!conversation) {
         throw new Error(
           `Conversation with slug '${conversationSlug}' not found`,
@@ -67,6 +67,7 @@ async function getOrCreateAgent(
 
       agent = await FactoryAgent.create({
         conversationSlug: conversationSlug,
+        model: model,
         repositories: repositories,
       });
 
@@ -99,13 +100,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const body = await request.json();
   const messages: UIMessage[] = body.messages;
+  const model: string = body.model || 'azure/gpt-5-mini';
 
   try {
     // Check if this is the first user message and title needs to be generated
-    const conversation = await repositories.conversation.findBySlug(
-      conversationSlug,
-    );
-    
+    const conversation =
+      await repositories.conversation.findBySlug(conversationSlug);
+
     if (conversation && conversation.title === 'New Conversation') {
       const existingMessages = await repositories.message.findByConversationId(
         conversation.id,
@@ -143,7 +144,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       }
     }
 
-    const agent = await getOrCreateAgent(conversationSlug);
+    const agent = await getOrCreateAgent(conversationSlug, model);
 
     const streamResponse = await agent.respond({
       messages: await validateUIMessages({ messages }),

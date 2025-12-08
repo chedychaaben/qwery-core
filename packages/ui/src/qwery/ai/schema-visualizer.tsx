@@ -34,27 +34,29 @@ export function SchemaVisualizer({
   tableName,
   className,
 }: SchemaVisualizerProps) {
-  const targetTableName = tableName || (schema.tables.length > 0 ? schema.tables[0]?.tableName : undefined);
+  const targetTableName =
+    tableName ||
+    (schema.tables.length > 0 ? schema.tables[0]?.tableName : undefined);
 
   return (
     <div className={cn('space-y-4', className)}>
       {/* Schema Header */}
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <Database className="h-4 w-4 text-muted-foreground" />
+          <Database className="text-muted-foreground h-4 w-4" />
           <h4 className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
             Table Schema
           </h4>
         </div>
         {targetTableName && (
           <div className="flex items-center gap-2 pl-6">
-            <Table2 className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-sm font-medium text-foreground">
+            <Table2 className="text-muted-foreground h-3.5 w-3.5" />
+            <span className="text-foreground text-sm font-medium">
               {targetTableName}
             </span>
           </div>
         )}
-        <div className="text-xs text-muted-foreground pl-6">
+        <div className="text-muted-foreground pl-6 text-xs">
           <span>Database: {schema.databaseName}</span>
           {schema.schemaName && schema.schemaName !== schema.databaseName && (
             <span> / Schema: {schema.schemaName}</span>
@@ -66,12 +68,13 @@ export function SchemaVisualizer({
       {schema.tables.map((table, tableIndex) => (
         <div key={tableIndex} className="space-y-2">
           <div className="flex items-center gap-2">
-            <Table2 className="h-4 w-4 text-muted-foreground" />
-            <h5 className="text-sm font-semibold text-foreground">
+            <Table2 className="text-muted-foreground h-4 w-4" />
+            <h5 className="text-foreground text-sm font-semibold">
               {table.tableName}
             </h5>
-            <span className="text-xs text-muted-foreground">
-              ({table.columns.length} column{table.columns.length !== 1 ? 's' : ''})
+            <span className="text-muted-foreground text-xs">
+              ({table.columns.length} column
+              {table.columns.length !== 1 ? 's' : ''})
             </span>
           </div>
 
@@ -80,14 +83,14 @@ export function SchemaVisualizer({
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
                 <thead>
-                  <tr className="border-b bg-muted/30">
-                    <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">
+                  <tr className="bg-muted/30 border-b">
+                    <th className="text-muted-foreground px-4 py-2 text-left text-xs font-medium">
                       <div className="flex items-center gap-2">
                         <Columns className="h-3 w-3" />
                         Column Name
                       </div>
                     </th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">
+                    <th className="text-muted-foreground px-4 py-2 text-left text-xs font-medium">
                       Data Type
                     </th>
                   </tr>
@@ -96,12 +99,12 @@ export function SchemaVisualizer({
                   {table.columns.map((column, colIndex) => (
                     <tr
                       key={colIndex}
-                      className="border-b hover:bg-muted/20 transition-colors"
+                      className="hover:bg-muted/20 border-b transition-colors"
                     >
                       <td className="px-4 py-2 text-sm font-medium">
                         {column.columnName}
                       </td>
-                      <td className="px-4 py-2 text-sm text-muted-foreground font-mono">
+                      <td className="text-muted-foreground px-4 py-2 font-mono text-sm">
                         {column.columnType}
                       </td>
                     </tr>
@@ -115,4 +118,3 @@ export function SchemaVisualizer({
     </div>
   );
 }
-

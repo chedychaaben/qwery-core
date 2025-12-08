@@ -19,7 +19,10 @@ export interface ConversationWelcomeProps {
   status?: ChatStatus;
 }
 
-export function ConversationWelcome({ onSubmit, status }: ConversationWelcomeProps) {
+export function ConversationWelcome({
+  onSubmit,
+  status,
+}: ConversationWelcomeProps) {
   const [input, setInput] = useState('');
 
   const handleSubmit = (message: PromptInputMessage) => {
@@ -103,4 +106,3 @@ export function ConversationWelcome({ onSubmit, status }: ConversationWelcomePro
     </div>
   );
 }
-

@@ -22,14 +22,18 @@ export interface DataGridProps {
  * Formats a date value for display
  */
 function formatDate(date: Date): string {
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  }) + ' ' + date.toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  return (
+    date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    }) +
+    ' ' +
+    date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  );
 }
 
 /**
@@ -37,7 +41,8 @@ function formatDate(date: Date): string {
  */
 function isISOString(value: string): boolean {
   // Simple check for ISO 8601 format: YYYY-MM-DD or YYYY-MM-DDTHH:mm:ss
-  const isoRegex = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d{3})?(Z|[+-]\d{2}:\d{2})?)?$/;
+  const isoRegex =
+    /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d{3})?(Z|[+-]\d{2}:\d{2})?)?$/;
   return isoRegex.test(value);
 }
 
@@ -71,9 +76,15 @@ function formatCellValue(value: unknown, columnName?: string): string {
     return value ? 'true' : 'false';
   }
   if (typeof value === 'object') {
-    if ('toISOString' in value && typeof (value as { toISOString?: () => string }).toISOString === 'function') {
+    if (
+      'toISOString' in value &&
+      typeof (value as { toISOString?: () => string }).toISOString ===
+        'function'
+    ) {
       try {
-        const date = new Date((value as { toISOString: () => string }).toISOString());
+        const date = new Date(
+          (value as { toISOString: () => string }).toISOString(),
+        );
         if (!isNaN(date.getTime())) {
           return formatDate(date);
         }
@@ -129,7 +140,7 @@ export function DataGrid({
 
   if (rows.length === 0) {
     return (
-      <div className="p-4 text-center text-sm text-muted-foreground">
+      <div className="text-muted-foreground p-4 text-center text-sm">
         No results found
       </div>
     );
@@ -142,11 +153,11 @@ export function DataGrid({
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
-              <tr className="border-b bg-muted/30">
+              <tr className="bg-muted/30 border-b">
                 {columns.map((column) => (
                   <th
                     key={column}
-                    className="px-4 py-2 text-left text-xs font-medium text-muted-foreground whitespace-nowrap"
+                    className="text-muted-foreground px-4 py-2 text-left text-xs font-medium whitespace-nowrap"
                   >
                     {column}
                   </th>
@@ -157,7 +168,7 @@ export function DataGrid({
               {currentRows.map((row, rowIndex) => (
                 <tr
                   key={startIndex + rowIndex}
-                  className="border-b hover:bg-muted/20 transition-colors"
+                  className="hover:bg-muted/20 border-b transition-colors"
                 >
                   {columns.map((column) => {
                     const value = row[column];
@@ -170,7 +181,9 @@ export function DataGrid({
                         key={column}
                         className={cn(
                           'px-4 py-2 text-sm',
-                          isDateColumn ? 'whitespace-nowrap' : 'whitespace-normal',
+                          isDateColumn
+                            ? 'whitespace-nowrap'
+                            : 'whitespace-normal',
                           isNull && 'text-muted-foreground italic',
                         )}
                         title={isNull ? 'null' : formattedValue}
@@ -180,9 +193,13 @@ export function DataGrid({
                             null
                           </span>
                         ) : (
-                          <div className={cn(
-                            isDateColumn ? 'whitespace-nowrap' : 'break-words',
-                          )}>
+                          <div
+                            className={cn(
+                              isDateColumn
+                                ? 'whitespace-nowrap'
+                                : 'break-words',
+                            )}
+                          >
                             {formattedValue}
                           </div>
                         )}
@@ -199,7 +216,7 @@ export function DataGrid({
       {/* Pagination Controls */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between gap-4 px-2">
-          <div className="text-xs text-muted-foreground">
+          <div className="text-muted-foreground text-xs">
             Showing {startIndex + 1} to {Math.min(endIndex, rows.length)} of{' '}
             {rows.length} rows
           </div>
@@ -214,15 +231,13 @@ export function DataGrid({
               <ChevronLeft className="h-3 w-3" />
               <span className="text-xs">Previous</span>
             </Button>
-            <div className="text-xs text-muted-foreground min-w-[80px] text-center">
+            <div className="text-muted-foreground min-w-[80px] text-center text-xs">
               Page {currentPage} of {totalPages}
             </div>
             <Button
               variant="outline"
               size="sm"
-              onClick={() =>
-                setCurrentPage((p) => Math.min(totalPages, p + 1))
-              }
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
               className="h-7 gap-1"
             >
@@ -235,4 +250,3 @@ export function DataGrid({
     </div>
   );
 }
-

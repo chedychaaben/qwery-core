@@ -620,7 +620,8 @@ export function FormRenderer<T extends ZodSchemaType>({
 
   React.useEffect(() => {
     if (!onValidityChangeRef.current) return;
-    const isValid = form.formState.isValid && Object.keys(form.formState.errors).length === 0;
+    const isValid =
+      form.formState.isValid && Object.keys(form.formState.errors).length === 0;
     onValidityChangeRef.current(isValid);
   }, [form.formState.isValid, form.formState.errors]);
 

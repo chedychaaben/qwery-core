@@ -26,4 +26,3 @@ export const ChartConfigSchema = z.object({
 });
 
 export type ChartConfig = z.infer<typeof ChartConfigSchema>;
-

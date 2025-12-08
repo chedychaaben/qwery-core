@@ -96,6 +96,7 @@ export const createStateMachine = (
             target: 'idle',
             actions: assign({
               previousMessages: ({ event }) => event.output,
+              model: ({ context }) => context.model,
             }),
           },
           onError: {
@@ -109,6 +110,7 @@ export const createStateMachine = (
             target: 'running',
             actions: assign({
               previousMessages: ({ event }) => event.messages,
+              model: ({ context }) => context.model,
               inputMessage: ({ event }) =>
                 event.messages[event.messages.length - 1]?.parts[0]?.text ?? '',
               streamResult: () => undefined, // Clear previous result when starting new request
@@ -138,47 +140,51 @@ export const createStateMachine = (
             initial: 'attempting',
             states: {
               attempting: {
-            invoke: {
+                invoke: {
                   src: 'detectIntentActorCached',
-              id: 'GET_INTENT',
-              input: ({ context }: { context: AgentContext }) => ({
-                inputMessage: context.inputMessage,
+                  id: 'GET_INTENT',
+                  input: ({ context }: { context: AgentContext }) => ({
+                    inputMessage: context.inputMessage,
                     model: context.model,
-              }),
-              onDone: [
-                {
-                  guard: 'isOther',
+                  }),
+                  onDone: [
+                    {
+                      guard: 'isOther',
                       target: '#factory-agent.running.summarizeIntent',
-                  actions: assign({
-                    intent: ({ event }) => event.output,
+                      actions: assign({
+                        intent: ({ event }) => event.output,
                         retryCount: () => 0, // Reset on success
-                  }),
-                },
-                {
-                  guard: 'isGreeting',
+                        model: ({ context }) => context.model,
+                      }),
+                    },
+                    {
+                      guard: 'isGreeting',
                       target: '#factory-agent.running.greeting',
-                  actions: assign({
-                    intent: ({ event }) => event.output,
+                      actions: assign({
+                        intent: ({ event }) => event.output,
                         retryCount: () => 0,
-                  }),
-                },
-                {
-                  guard: 'isReadData',
+                        model: ({ context }) => context.model,
+                      }),
+                    },
+                    {
+                      guard: 'isReadData',
                       target: '#factory-agent.running.readData',
                       actions: assign({
                         intent: ({ event }) => event.output,
                         retryCount: () => 0,
+                        model: ({ context }) => context.model,
                       }),
                     },
                     {
                       guard: 'isSystem',
                       target: '#factory-agent.running.systemInfo',
-                  actions: assign({
-                    intent: ({ event }) => event.output,
+                      actions: assign({
+                        intent: ({ event }) => event.output,
                         retryCount: () => 0,
-                  }),
-                },
-              ],
+                        model: ({ context }) => context.model,
+                      }),
+                    },
+                  ],
                   onError: [
                     {
                       guard: 'shouldRetry',
@@ -187,14 +193,16 @@ export const createStateMachine = (
                         retryCount: ({ context }) =>
                           (context.retryCount || 0) + 1,
                         lastError: ({ event }) => event.error as Error,
+                        model: ({ context }) => context.model,
                       }),
                     },
                     {
                       guard: 'retryLimitExceeded',
-                target: '#factory-agent.idle',
-                actions: assign({
+                      target: '#factory-agent.idle',
+                      actions: assign({
                         error: ({ context }) =>
                           `Intent detection failed after 3 retries: ${context.lastError?.message}`,
+                        model: ({ context }) => context.model,
                       }),
                     },
                   ],
@@ -207,6 +215,7 @@ export const createStateMachine = (
                       retryCount: ({ context }) =>
                         (context.retryCount || 0) + 1,
                       error: () => 'Intent detection timeout',
+                      model: ({ context }) => context.model,
                     }),
                   },
                 },
@@ -234,6 +243,7 @@ export const createStateMachine = (
                 target: '#factory-agent.idle',
                 actions: assign({
                   streamResult: ({ event }) => event.output,
+                  model: ({ context }) => context.model,
                 }),
               },
               onError: {
@@ -252,6 +262,7 @@ export const createStateMachine = (
                     return errorMsg;
                   },
                   streamResult: undefined,
+                  model: ({ context }) => context.model,
                 }),
               },
             },
@@ -268,6 +279,7 @@ export const createStateMachine = (
                 target: '#factory-agent.idle',
                 actions: assign({
                   streamResult: ({ event }) => event.output,
+                  model: ({ context }) => context.model,
                 }),
               },
               onError: {
@@ -282,6 +294,7 @@ export const createStateMachine = (
                     return errorMsg;
                   },
                   streamResult: undefined,
+                  model: ({ context }) => context.model,
                 }),
               },
             },
@@ -297,16 +310,16 @@ export const createStateMachine = (
                       src: 'readDataAgentActor',
                       id: 'READ_DATA',
                       input: ({ context }: { context: AgentContext }) => ({
+                        inputMessage: context.inputMessage,
                         conversationId: context.conversationId,
                         previousMessages: context.previousMessages,
-                        model: context.model,
-                        repositories: repositories,
                       }),
                       onDone: {
                         target: 'completed',
                         actions: assign({
                           streamResult: ({ event }) => event.output,
                           retryCount: () => 0, // Reset on success
+                          model: ({ context }) => context.model,
                         }),
                       },
                       onError: [
@@ -317,6 +330,7 @@ export const createStateMachine = (
                             retryCount: ({ context }) =>
                               (context.retryCount || 0) + 1,
                             lastError: ({ event }) => event.error as Error,
+                            model: ({ context }) => context.model,
                           }),
                         },
                         {
@@ -335,6 +349,7 @@ export const createStateMachine = (
                               return errorMsg;
                             },
                             streamResult: undefined,
+                            model: ({ context }) => context.model,
                           }),
                         },
                       ],
@@ -344,6 +359,7 @@ export const createStateMachine = (
                         target: 'failed',
                         actions: assign({
                           error: () => 'ReadData timeout after 120 seconds',
+                          model: ({ context }) => context.model,
                         }),
                       },
                     },
@@ -376,6 +392,7 @@ export const createStateMachine = (
                 target: '#factory-agent.idle',
                 actions: assign({
                   streamResult: ({ event }) => event.output,
+                  model: ({ context }) => context.model,
                 }),
               },
               onError: {
@@ -390,6 +407,7 @@ export const createStateMachine = (
                     return errorMsg;
                   },
                   streamResult: undefined,
+                  model: ({ context }) => context.model,
                 }),
               },
             },

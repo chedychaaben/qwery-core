@@ -47,7 +47,9 @@ function convertToCSV(data: Array<Record<string, unknown>>): string {
   const headers = Array.from(allKeys);
 
   // Create CSV header row
-  const csvRows: string[] = [headers.map((h) => `"${String(h).replace(/"/g, '""')}"`).join(',')];
+  const csvRows: string[] = [
+    headers.map((h) => `"${String(h).replace(/"/g, '""')}"`).join(','),
+  ];
 
   // Create CSV data rows
   data.forEach((row) => {
@@ -77,8 +79,7 @@ export function ChartWrapper({
   chartData,
 }: ChartWrapperProps) {
   const [copied, setCopied] = useState(false);
-  const [internalShowAxisLabels, setInternalShowAxisLabels] =
-    useState(true);
+  const [internalShowAxisLabels, setInternalShowAxisLabels] = useState(true);
   const internalRef = useRef<HTMLDivElement>(null);
   const ref = chartRef || internalRef;
 
@@ -118,7 +119,8 @@ export function ChartWrapper({
       textElements.forEach((textEl) => {
         const element = textEl as SVGTextElement;
         const currentStyle = element.getAttribute('style') || '';
-        const fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"';
+        const fontFamily =
+          '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"';
         const newStyle = currentStyle
           ? `${currentStyle}; font-family: ${fontFamily};`
           : `font-family: ${fontFamily};`;
@@ -203,7 +205,8 @@ export function ChartWrapper({
         }
 
         ctx.fillStyle = titleColor;
-        ctx.font = 'bold 16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+        ctx.font =
+          'bold 16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(title, width / 2, titlePadding + 16);
@@ -309,20 +312,17 @@ export function ChartWrapper({
   }, [chartData, title]);
 
   // Memoize context value to prevent unnecessary re-renders
-  const contextValue = useMemo(
-    () => ({ showAxisLabels }),
-    [showAxisLabels],
-  );
+  const contextValue = useMemo(() => ({ showAxisLabels }), [showAxisLabels]);
 
   return (
     <div className={cn('relative space-y-3', className)}>
       {/* Header with title centered and buttons on right */}
       <div className="relative mb-3 flex items-center justify-center">
         {title && (
-          <h3 className="text-base font-semibold text-foreground">{title}</h3>
+          <h3 className="text-foreground text-base font-semibold">{title}</h3>
         )}
         {/* Buttons and controls in top right */}
-        <div className="absolute right-0 top-0 flex items-center gap-2">
+        <div className="absolute top-0 right-0 flex items-center gap-2">
           {!hideAxisLabelsCheckbox && (
             <div className="flex items-center gap-1.5">
               <Checkbox
@@ -335,7 +335,7 @@ export function ChartWrapper({
               />
               <Label
                 htmlFor="show-axis-labels"
-                className="text-xs text-muted-foreground cursor-pointer"
+                className="text-muted-foreground cursor-pointer text-xs"
               >
                 Show labels
               </Label>
@@ -384,4 +384,3 @@ export function ChartWrapper({
     </div>
   );
 }
-

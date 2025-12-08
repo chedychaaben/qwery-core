@@ -25,8 +25,14 @@ import {
   ToolOutput,
 } from '../../ai-elements/tool';
 import { ChartRenderer, type ChartConfig } from './charts/chart-renderer';
-import { ChartTypeSelector, type ChartTypeSelection } from './charts/chart-type-selector';
-import { SQLQueryVisualizer, type SQLQueryResult } from './sql-query-visualizer';
+import {
+  ChartTypeSelector,
+  type ChartTypeSelection,
+} from './charts/chart-type-selector';
+import {
+  SQLQueryVisualizer,
+  type SQLQueryResult,
+} from './sql-query-visualizer';
 import { SchemaVisualizer, type SchemaData } from './schema-visualizer';
 import {
   AvailableSheetsVisualizer,
@@ -185,7 +191,7 @@ export function TextPart({
             {isCopied ? (
               <CheckIcon className="size-3 text-green-600" />
             ) : (
-            <CopyIcon className="size-3" />
+              <CopyIcon className="size-3" />
             )}
           </MessageAction>
         </MessageActions>
@@ -268,14 +274,17 @@ function ChartToolOutput({
   ) {
     try {
       const chartConfig = parsedOutput as ChartConfig;
-      
+
       // Validate chart config has required fields
       if (
         !chartConfig.chartType ||
         !Array.isArray(chartConfig.data) ||
         !chartConfig.config
       ) {
-        console.warn('[ChartToolOutput] Invalid chart config structure:', chartConfig);
+        console.warn(
+          '[ChartToolOutput] Invalid chart config structure:',
+          chartConfig,
+        );
         return <ToolOutput output={output} errorText={errorText} />;
       }
 
@@ -284,13 +293,17 @@ function ChartToolOutput({
           <h4 className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
             Chart
           </h4>
-          <div className="bg-muted/50 max-w-full min-w-0 overflow-hidden rounded-md p-4 w-full">
+          <div className="bg-muted/50 w-full max-w-full min-w-0 overflow-hidden rounded-md p-4">
             <ChartRenderer chartConfig={chartConfig} />
           </div>
         </div>
       );
     } catch (error) {
-      console.error('[ChartToolOutput] Error rendering chart:', error, parsedOutput);
+      console.error(
+        '[ChartToolOutput] Error rendering chart:',
+        error,
+        parsedOutput,
+      );
       return <ToolOutput output={output} errorText={errorText} />;
     }
   }
@@ -417,8 +430,34 @@ function SQLQueryOutput({
   input: ToolUIPart['input'];
   errorText: ToolUIPart['errorText'];
 }) {
+  // Extract query from input (always extract, even on error)
+  let query: string | undefined;
+  if (input && typeof input === 'object' && 'query' in input) {
+    query = typeof input.query === 'string' ? input.query : undefined;
+  }
+
+  // If there's an error, display the query and the error
   if (errorText) {
-    return <ToolOutput output={output} errorText={errorText} />;
+    return (
+      <div className="min-w-0 space-y-4 p-4">
+        {query && <SQLQueryVisualizer query={query} />}
+        <div className="space-y-2">
+          <h4 className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+            Error
+          </h4>
+          <div className="bg-destructive/10 border-destructive/20 max-w-full min-w-0 rounded-md border p-4">
+            <div className="flex items-start gap-2">
+              <XCircleIcon className="text-destructive mt-0.5 size-4 shrink-0" />
+              <div className="min-w-0 flex-1">
+                <pre className="text-destructive m-0 font-sans text-sm wrap-break-word whitespace-pre-wrap">
+                  {errorText}
+                </pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (!output) {
@@ -433,12 +472,6 @@ function SQLQueryOutput({
     } catch {
       return <ToolOutput output={output} errorText={errorText} />;
     }
-  }
-
-  // Extract query from input
-  let query: string | undefined;
-  if (input && typeof input === 'object' && 'query' in input) {
-    query = typeof input.query === 'string' ? input.query : undefined;
   }
 
   // Check if output matches SQL query result structure
@@ -632,8 +665,7 @@ export function ToolPart({ part, messageId, index }: ToolPartProps) {
   const isSelectChartType = part.type === 'tool-selectChartType';
   const isRunQuery = part.type === 'tool-runQuery';
   const isGetSchema = part.type === 'tool-getSchema';
-  const isListAvailableSheets =
-    part.type === 'tool-listAvailableSheets';
+  const isListAvailableSheets = part.type === 'tool-listAvailableSheets';
   const isViewSheet = part.type === 'tool-viewSheet';
 
   return (
@@ -658,10 +690,7 @@ export function ToolPart({ part, messageId, index }: ToolPartProps) {
         ) : isGenerateChart ? (
           <ChartToolOutput output={part.output} errorText={part.errorText} />
         ) : isGetSchema ? (
-          <SchemaOutput
-            output={part.output}
-            errorText={part.errorText}
-          />
+          <SchemaOutput output={part.output} errorText={part.errorText} />
         ) : isRunQuery ? (
           <SQLQueryOutput
             output={part.output}
@@ -674,10 +703,7 @@ export function ToolPart({ part, messageId, index }: ToolPartProps) {
             errorText={part.errorText}
           />
         ) : isViewSheet ? (
-          <ViewSheetOutput
-            output={part.output}
-            errorText={part.errorText}
-          />
+          <ViewSheetOutput output={part.output} errorText={part.errorText} />
         ) : (
           <ToolOutput output={part.output} errorText={part.errorText} />
         )}

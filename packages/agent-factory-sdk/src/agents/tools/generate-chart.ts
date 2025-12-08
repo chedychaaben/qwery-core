@@ -8,6 +8,7 @@ import {
 import { SELECT_CHART_TYPE_PROMPT } from '../prompts/select-chart-type.prompt';
 import { GENERATE_CHART_CONFIG_PROMPT } from '../prompts/generate-chart-config.prompt';
 import type { BusinessContext } from '../../tools/types/business-context.types';
+import { getSupportedChartTypes } from '../config/supported-charts';
 
 export interface QueryResults {
   rows: Array<Record<string, unknown>>;
@@ -34,7 +35,8 @@ export async function selectChartType(
   try {
     const timeoutPromise = new Promise<never>((_, reject) => {
       setTimeout(
-        () => reject(new Error('Chart type selection timeout after 30 seconds')),
+        () =>
+          reject(new Error('Chart type selection timeout after 30 seconds')),
         30000,
       );
     });
@@ -77,10 +79,12 @@ export async function selectChartType(
     return result.object;
   } catch (error) {
     console.error('[selectChartType] ERROR:', error);
-    // Fallback to bar chart if selection fails
+    // Fallback to first supported chart type if selection fails
+    const supportedTypes = getSupportedChartTypes();
+    const fallbackType = supportedTypes[0] || 'bar';
     return {
-      chartType: 'bar',
-      reasoning: 'Failed to analyze chart type, defaulting to bar chart',
+      chartType: fallbackType,
+      reasoning: `Failed to analyze chart type, defaulting to ${fallbackType} chart`,
     };
   }
 }
@@ -141,9 +145,7 @@ export async function generateChartConfig(
  * Main function: Generate chart from query results
  * This is the entry point called by the generateChart tool
  */
-export async function generateChart(
-  input: GenerateChartInput,
-): Promise<{
+export async function generateChart(input: GenerateChartInput): Promise<{
   chartType: ChartType;
   data: Array<Record<string, unknown>>;
   config: {
@@ -155,25 +157,16 @@ export async function generateChart(
     valueKey?: string;
   };
 }> {
-  // Step 1: Select chart type (skip if already provided)
-  let chartType: ChartType;
-  if (input.chartType) {
-    chartType = input.chartType;
-    console.debug(
-      `[generateChart] Using provided chart type: ${chartType}`,
-    );
-  } else {
-    const selection = await selectChartType(
-      input.queryResults,
-      input.sqlQuery,
-      input.userInput,
-      input.businessContext,
-    );
-    chartType = selection.chartType;
-    console.debug(
-      `[generateChart] Selected chart type: ${chartType}, reasoning: ${selection.reasoning}`,
-    );
-  }
+  // Step 1: Always select chart type to get reasoning for UI
+  // Even if chartType is provided, we still call selectChartType to get the reasoning
+  // This ensures the UI always has the selection data to display
+  const selection = await selectChartType(
+    input.queryResults,
+    input.sqlQuery,
+    input.userInput,
+    input.businessContext,
+  );
+  const chartType = input.chartType || selection.chartType;
 
   // Step 2: Generate chart configuration
   const chartConfig = await generateChartConfig(
@@ -185,4 +178,3 @@ export async function generateChart(
 
   return chartConfig;
 }
-

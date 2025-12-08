@@ -8,7 +8,13 @@ import { useGetConversationsByProject } from '~/lib/queries/use-get-conversation
 import { createPath } from '~/config/paths.config';
 import pathsConfig from '~/config/paths.config';
 import { Conversation } from '@qwery/domain/entities';
-import { MessageCircle, ClockIcon, Sparkles, ArrowRight, Plus } from 'lucide-react';
+import {
+  MessageCircle,
+  ClockIcon,
+  Sparkles,
+  ArrowRight,
+  Plus,
+} from 'lucide-react';
 import { cn } from '@qwery/ui/utils';
 import { Button } from '@qwery/ui/button';
 
@@ -28,7 +34,7 @@ function formatRelativeTime(date: Date): string {
   if (diffDays === 1) {
     return `Yesterday at ${timeStr}`;
   }
-  
+
   const day = date.getDate();
   const month = date.toLocaleDateString('en-US', { month: 'long' });
   const year = date.getFullYear();
@@ -41,15 +47,18 @@ export default function ConversationIndexPage() {
   const projectSlug = useParams().slug;
 
   const project = useGetProjectBySlug(repositories.project, projectSlug || '');
-  const { data: allConversations = [], isLoading } = useGetConversationsByProject(
-    repositories.conversation,
-    workspace.projectId,
-  );
+  const { data: allConversations = [], isLoading } =
+    useGetConversationsByProject(
+      repositories.conversation,
+      workspace.projectId,
+    );
 
   const recentConversations = allConversations
     .sort((a, b) => {
-      const dateA = a.createdAt instanceof Date ? a.createdAt : new Date(a.createdAt);
-      const dateB = b.createdAt instanceof Date ? b.createdAt : new Date(b.createdAt);
+      const dateA =
+        a.updatedAt instanceof Date ? a.updatedAt : new Date(a.updatedAt);
+      const dateB =
+        b.updatedAt instanceof Date ? b.updatedAt : new Date(b.updatedAt);
       return dateB.getTime() - dateA.getTime();
     })
     .slice(0, 5);
@@ -122,29 +131,29 @@ export default function ConversationIndexPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-center gap-2">
               <ClockIcon className="text-muted-foreground size-4" />
-              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              <h2 className="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
                 Recent Conversations
               </h2>
             </div>
             <div className="mx-auto w-full max-w-2xl space-y-2">
               {recentConversations.map((conversation) => {
-                const createdAt =
-                  conversation.createdAt instanceof Date
-                    ? conversation.createdAt
-                    : new Date(conversation.createdAt);
-                const timeLabel = formatRelativeTime(createdAt);
+                const updatedAt =
+                  conversation.updatedAt instanceof Date
+                    ? conversation.updatedAt
+                    : new Date(conversation.updatedAt);
+                const timeLabel = formatRelativeTime(updatedAt);
 
                 return (
                   <button
                     key={conversation.id}
                     onClick={() => handleConversationClick(conversation)}
                     className={cn(
-                      'group flex w-full items-center gap-4 rounded-lg border bg-card px-5 py-4 text-left transition-all',
+                      'group bg-card flex w-full items-center gap-4 rounded-lg border px-5 py-4 text-left transition-all',
                       'hover:border-primary/20 hover:bg-accent/50 hover:shadow-sm',
-                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20',
+                      'focus-visible:ring-primary/20 focus-visible:ring-2 focus-visible:outline-none',
                     )}
                   >
-                    <div className="bg-muted flex size-10 shrink-0 items-center justify-center rounded-lg transition-colors group-hover:bg-primary/10 group-hover:text-primary">
+                    <div className="bg-muted group-hover:bg-primary/10 group-hover:text-primary flex size-10 shrink-0 items-center justify-center rounded-lg transition-colors">
                       <MessageCircle className="size-5" />
                     </div>
                     <div className="flex min-w-0 flex-1 flex-col gap-1">

@@ -31,7 +31,8 @@ function parseSheetError(errorText: string): {
   suggestedSheetName?: string;
   originalSheetName?: string;
 } {
-  const tableNotFoundRegex = /Table with name\s+["']?(\w+)["']?\s+does not exist/i;
+  const tableNotFoundRegex =
+    /Table with name\s+["']?(\w+)["']?\s+does not exist/i;
   const suggestionRegex = /Did you mean\s+["']?(\w+)["']?\?/i;
 
   const tableMatch = errorText.match(tableNotFoundRegex);
@@ -67,12 +68,13 @@ export function ViewSheetError({
         description={`The sheet ${displaySheetName} does not exist in the database.`}
       >
         {suggestedSheetName && (
-          <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+          <div className="border-primary/20 bg-primary/5 rounded-lg border p-4">
             <div className="flex items-start gap-3">
               <LightbulbIcon className="text-primary mt-0.5 size-5 shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-primary">
-                  Did you mean <span className="font-mono">{suggestedSheetName}</span>?
+              <div className="min-w-0 flex-1">
+                <p className="text-primary text-sm font-medium">
+                  Did you mean{' '}
+                  <span className="font-mono">{suggestedSheetName}</span>?
                 </p>
                 {onRetry && (
                   <Button
@@ -130,18 +132,14 @@ export function ViewSheetError({
   return (
     <div className="min-w-0 space-y-3 p-4">
       <div className="flex items-center gap-3">
-        <XCircleIcon className="size-5 text-destructive shrink-0" />
-        <span className="text-sm font-medium text-destructive">
+        <XCircleIcon className="text-destructive size-5 shrink-0" />
+        <span className="text-destructive text-sm font-medium">
           Error viewing sheet
         </span>
       </div>
       <Collapsible open={showDetails} onOpenChange={setShowDetails}>
         <CollapsibleTrigger asChild>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 text-xs"
-          >
+          <Button variant="outline" size="sm" className="h-8 text-xs">
             <InfoIcon className="mr-1.5 size-3.5" />
             View details
             <ChevronDownIcon
@@ -153,8 +151,8 @@ export function ViewSheetError({
           </Button>
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <div className="mt-3 rounded-lg border border-destructive/20 bg-destructive/5 p-4">
-            <pre className="text-destructive text-xs font-mono whitespace-pre-wrap break-words">
+          <div className="border-destructive/20 bg-destructive/5 mt-3 rounded-lg border p-4">
+            <pre className="text-destructive font-mono text-xs break-words whitespace-pre-wrap">
               {errorText}
             </pre>
           </div>

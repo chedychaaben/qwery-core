@@ -131,8 +131,18 @@ function PromptInputContent(props: QweryPromptInputProps) {
             </PromptInputSelectContent>
           </PromptInputSelect>
           <QweryContext
-            usedTokens={props.usage?.usedTokens ?? 0}
-            maxTokens={props.usage?.maxTokens ?? 0}
+            usedTokens={
+              typeof props.usage?.usedTokens === 'number' &&
+              !isNaN(props.usage.usedTokens)
+                ? props.usage.usedTokens
+                : 0
+            }
+            maxTokens={
+              typeof props.usage?.maxTokens === 'number' &&
+              !isNaN(props.usage.maxTokens)
+                ? props.usage.maxTokens
+                : 0
+            }
             usage={props.usage?.usage}
             modelId={props.usage?.modelId ?? props.model}
           />
@@ -141,18 +151,20 @@ function PromptInputContent(props: QweryPromptInputProps) {
           disabled={
             props.stopDisabled ||
             (props.status !== 'streaming' &&
+              props.status !== 'submitted' &&
               !props.input.trim() &&
               attachmentsCount === 0)
           }
           status={props.status}
           type={
-            props.status === 'streaming' && !props.stopDisabled
+            (props.status === 'streaming' || props.status === 'submitted') &&
+            !props.stopDisabled
               ? 'button'
               : 'submit'
           }
           onClick={async (e) => {
             if (
-              props.status === 'streaming' &&
+              (props.status === 'streaming' || props.status === 'submitted') &&
               !props.stopDisabled &&
               props.onStop
             ) {
