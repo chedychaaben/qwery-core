@@ -1,0 +1,78 @@
+{
+  "name": "@qwery/extension-youtube-data-api-v3",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/extension.js",
+  "scripts": {
+    "lint": "echo \"no lint configured\"",
+    "test": "vitest run --coverage --passWithNoTests",
+    "build": "tsc -p tsconfig.build.json"
+  },
+  "contributes": {
+    "datasources": [
+      {
+        "id": "youtube-data-api-v3",
+        "name": "YouTube Data API v3",
+        "description": "Query public YouTube video stats via API key",
+        "icon": "media/YouTube_2024.svg",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "apiKey": {
+              "type": "string",
+              "description": "YouTube Data API key"
+            },
+            "channelId": {
+              "type": "string",
+              "description": "Channel ID (e.g., UC...)"
+            },
+            "maxResults": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "description": "Max videos to load (default 25)"
+            },
+            "publishedAfter": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Optional filter: published after (RFC3339)"
+            },
+            "publishedBefore": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Optional filter: published before (RFC3339)"
+            }
+          },
+          "required": [
+            "apiKey",
+            "channelId"
+          ]
+        },
+        "drivers": [
+          "youtube-data-api-v3.default"
+        ]
+      }
+    ],
+    "drivers": [
+      {
+        "id": "youtube-data-api-v3.default",
+        "name": "YouTube Data API v3 (Node)",
+        "description": "Node runtime driver using googleapis client + DuckDB",
+        "runtime": "node",
+        "entry": "./dist/driver.js"
+      }
+    ]
+  },
+  "dependencies": {
+    "@duckdb/node-api": "1.4.2-r.1",
+    "@qwery/extensions-sdk": "workspace:*",
+    "googleapis": "^135.0.0",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@vitest/coverage-istanbul": "catalog:",
+    "msw": "catalog:",
+    "vitest": "catalog:"
+  }
+}

@@ -62,6 +62,7 @@ export default defineConfig(({ command }) => ({
     ...tailwindCssVitePlugin.plugins,
   ],
   server: {
+    host: '0.0.0.0',
     port: 3000,
     allowedHosts: ALLOWED_HOSTS,
     proxy: {

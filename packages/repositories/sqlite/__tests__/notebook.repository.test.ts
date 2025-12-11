@@ -69,6 +69,7 @@ describe('NotebookRepository', () => {
       ],
       createdAt: new Date('2024-01-01T00:00:00Z'),
       updatedAt: new Date('2024-01-01T00:00:00Z'),
+      isPublic: overrides?.isPublic ?? false,
       ...overrides,
     };
   };

@@ -105,6 +105,7 @@ export function registerDatasourceCommands(
         updatedAt: now,
         createdBy: workspace?.userId ?? 'cli',
         updatedBy: workspace?.userId ?? 'cli',
+        isPublic: false,
       };
 
       const repositories = container.getRepositories();

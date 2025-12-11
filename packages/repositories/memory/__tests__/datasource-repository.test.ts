@@ -35,6 +35,7 @@ describe('DatasourceRepository', () => {
         updatedAt: new Date(),
         createdBy: 'user1',
         updatedBy: 'user1',
+        isPublic: false,
       };
 
       const result = await repository.create(datasource);
@@ -61,6 +62,7 @@ describe('DatasourceRepository', () => {
         updatedAt: new Date(),
         createdBy: 'user1',
         updatedBy: 'user1',
+        isPublic: false,
       };
 
       const result = await repository.create(datasource);
@@ -85,6 +87,7 @@ describe('DatasourceRepository', () => {
         updatedAt: new Date(),
         createdBy: 'user1',
         updatedBy: 'user1',
+        isPublic: false,
       };
 
       await repository.create(datasource);
@@ -115,6 +118,7 @@ describe('DatasourceRepository', () => {
         updatedAt: new Date(),
         createdBy: 'user1',
         updatedBy: 'user1',
+        isPublic: false,
       };
 
       await repository.create(datasource);
@@ -151,6 +155,7 @@ describe('DatasourceRepository', () => {
         updatedAt: new Date(),
         createdBy: 'user1',
         updatedBy: 'user1',
+        isPublic: false,
       };
 
       const datasource2: Datasource = {
@@ -167,6 +172,7 @@ describe('DatasourceRepository', () => {
         updatedAt: new Date(),
         createdBy: 'user2',
         updatedBy: 'user2',
+        isPublic: false,
       };
 
       await repository.create(datasource1);
@@ -194,6 +200,7 @@ describe('DatasourceRepository', () => {
           updatedAt: new Date(),
           createdBy: 'user1',
           updatedBy: 'user1',
+          isPublic: false,
         };
         await repository.create(datasource);
       }
@@ -218,6 +225,7 @@ describe('DatasourceRepository', () => {
           updatedAt: new Date(),
           createdBy: 'user1',
           updatedBy: 'user1',
+          isPublic: false,
         };
         await repository.create(datasource);
       }
@@ -243,6 +251,7 @@ describe('DatasourceRepository', () => {
         updatedAt: new Date(),
         createdBy: 'user1',
         updatedBy: 'user1',
+        isPublic: false,
       };
 
       await repository.create(datasource);
@@ -280,6 +289,7 @@ describe('DatasourceRepository', () => {
         updatedAt: new Date(),
         createdBy: 'user1',
         updatedBy: 'user1',
+        isPublic: false,
       };
 
       await expect(repository.update(datasource)).rejects.toThrow(
@@ -304,6 +314,7 @@ describe('DatasourceRepository', () => {
         updatedAt: new Date(),
         createdBy: 'user1',
         updatedBy: 'user1',
+        isPublic: false,
       };
 
       await repository.create(datasource);

@@ -37,6 +37,7 @@ describe('NotebookRepository', () => {
             runMode: 'default',
           },
         ],
+        isPublic: false,
       };
 
       const result = await repository.create(notebook);
@@ -60,6 +61,7 @@ describe('NotebookRepository', () => {
         updatedAt: new Date(),
         datasources: ['ds1'],
         cells: [],
+        isPublic: false,
       };
 
       await repository.create(notebook);
@@ -87,6 +89,7 @@ describe('NotebookRepository', () => {
         updatedAt: new Date(),
         datasources: ['ds1'],
         cells: [],
+        isPublic: false,
       };
 
       await repository.create(notebook);
@@ -115,6 +118,7 @@ describe('NotebookRepository', () => {
         updatedAt: new Date(),
         datasources: ['ds1'],
         cells: [],
+        isPublic: false,
       };
 
       await repository.create(notebook);
@@ -141,6 +145,7 @@ describe('NotebookRepository', () => {
         updatedAt: new Date(),
         datasources: ['ds1'],
         cells: [],
+        isPublic: false,
       };
 
       const notebook2: Notebook = {
@@ -154,6 +159,7 @@ describe('NotebookRepository', () => {
         updatedAt: new Date(),
         datasources: ['ds1'],
         cells: [],
+        isPublic: false,
       };
 
       await repository.create(notebook1);
@@ -184,6 +190,7 @@ describe('NotebookRepository', () => {
         updatedAt: new Date(),
         datasources: ['ds1'],
         cells: [],
+        isPublic: false,
       };
 
       const notebook2: Notebook = {
@@ -197,6 +204,7 @@ describe('NotebookRepository', () => {
         updatedAt: new Date(),
         datasources: ['ds2'],
         cells: [],
+        isPublic: false,
       };
 
       await repository.create(notebook1);
@@ -221,6 +229,7 @@ describe('NotebookRepository', () => {
           updatedAt: new Date(),
           datasources: [],
           cells: [],
+          isPublic: false,
         };
         await repository.create(notebook);
       }
@@ -243,6 +252,7 @@ describe('NotebookRepository', () => {
         updatedAt: new Date(),
         datasources: ['ds1'],
         cells: [],
+        isPublic: false,
       };
 
       await repository.create(notebook);
@@ -285,6 +295,7 @@ describe('NotebookRepository', () => {
         updatedAt: new Date(),
         datasources: ['ds1'],
         cells: [],
+        isPublic: false,
       };
 
       await expect(repository.update(notebook)).rejects.toThrow(
@@ -306,6 +317,7 @@ describe('NotebookRepository', () => {
         updatedAt: new Date(),
         datasources: ['ds1'],
         cells: [],
+        isPublic: false,
       };
 
       await repository.create(notebook);

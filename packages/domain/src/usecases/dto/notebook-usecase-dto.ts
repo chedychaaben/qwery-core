@@ -37,6 +37,8 @@ export class NotebookOutput {
   public datasources!: string[];
   @Expose()
   public cells!: Cell[];
+  @Expose()
+  public isPublic!: boolean;
 
   public static new(notebook: Notebook): NotebookOutput {
     return plainToClass(NotebookOutput, notebook);

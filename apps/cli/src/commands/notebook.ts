@@ -73,6 +73,7 @@ export function registerNotebookCommands(
         updatedAt: now,
         datasources: [],
         cells: [],
+        isPublic: false,
       };
 
       const repositories = container.getRepositories();

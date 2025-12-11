@@ -52,8 +52,22 @@ const NotebookSchema = z.object({
   datasources: z
     .array(z.string().min(1))
     .describe('The datasources to use for the Notebook'),
-
   cells: z.array(CellSchema),
+  createdBy: z
+    .string()
+    .uuid()
+    .optional()
+    .describe('The user who created the notebook'),
+  isPublic: z
+    .boolean()
+    .default(false)
+    .describe('If true, this notebook is publicly viewable'),
+  remixedFrom: z
+    .string()
+    .uuid()
+    .optional()
+    .nullable()
+    .describe('If set, this notebook was remixed from another notebook'),
 });
 
 export type Notebook = z.infer<typeof NotebookSchema>;
@@ -84,6 +98,12 @@ export class NotebookEntity extends Entity<string, typeof NotebookSchema> {
   public datasources!: string[];
   @Expose()
   public cells!: Cell[];
+  @Expose()
+  public createdBy?: string;
+  @Expose()
+  public isPublic!: boolean;
+  @Expose()
+  public remixedFrom?: string | null;
 
   public static create(newNotebook: CreateNotebookInput): NotebookEntity {
     const { id, slug } = generateIdentity();
@@ -108,6 +128,7 @@ export class NotebookEntity extends Entity<string, typeof NotebookSchema> {
           runMode: 'default',
         },
       ],
+      isPublic: false,
     };
 
     return plainToClass(NotebookEntity, NotebookSchema.parse(notebook));

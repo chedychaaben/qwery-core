@@ -24,6 +24,7 @@ describe('NotebookRunner', () => {
       updatedAt: new Date(),
       createdBy: 'user-1',
       updatedBy: 'user-1',
+      isPublic: false,
     };
   });
 

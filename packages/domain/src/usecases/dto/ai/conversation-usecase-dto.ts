@@ -27,6 +27,8 @@ export class ConversationOutput {
   public createdBy!: string;
   @Expose()
   public updatedBy!: string;
+  @Expose()
+  public isPublic!: boolean;
 
   public static new(conversation: Conversation): ConversationOutput {
     return plainToClass(ConversationOutput, conversation);

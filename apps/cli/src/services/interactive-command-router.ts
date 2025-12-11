@@ -193,6 +193,7 @@ export class InteractiveCommandRouter {
           updatedAt: now,
           createdBy: workspace?.userId ?? 'cli',
           updatedBy: workspace?.userId ?? 'cli',
+          isPublic: false,
         };
 
         const repositories = this.container.getRepositories();
@@ -316,6 +317,7 @@ export class InteractiveCommandRouter {
           updatedAt: now,
           datasources: [],
           cells: [],
+          isPublic: false,
         };
 
         const repositories = this.container.getRepositories();

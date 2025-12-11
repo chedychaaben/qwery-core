@@ -298,6 +298,7 @@ export class InteractiveRepl {
           updatedAt: now,
           createdBy: 'cli',
           updatedBy: 'cli',
+          isPublic: false,
         });
         // Reload conversation to ensure it exists
         conversation = await repositories.conversation.findBySlug(
@@ -472,6 +473,7 @@ export class InteractiveRepl {
           updatedAt: now,
           createdBy: 'cli',
           updatedBy: 'cli',
+          isPublic: false,
         });
 
         this.agent = await FactoryAgent.create({

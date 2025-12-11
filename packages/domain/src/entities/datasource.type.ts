@@ -37,6 +37,16 @@ export const DatasourceSchema = z.object({
     .describe('The date and time the datasource was last updated'),
   createdBy: z.string().describe('The user who created the datasource'),
   updatedBy: z.string().describe('The user who last updated the datasource'),
+  isPublic: z
+    .boolean()
+    .default(false)
+    .describe('If true, this datasource is publicly viewable'),
+  remixedFrom: z
+    .string()
+    .uuid()
+    .optional()
+    .nullable()
+    .describe('If set, this datasource was remixed from another datasource'),
 });
 
 export type Datasource = z.infer<typeof DatasourceSchema>;
@@ -71,6 +81,10 @@ export class DatasourceEntity extends Entity<string, typeof DatasourceSchema> {
   public createdBy!: string;
   @Expose()
   public updatedBy!: string;
+  @Expose()
+  public isPublic!: boolean;
+  @Expose()
+  public remixedFrom?: string | null;
 
   public static create(newDatasource: CreateDatasourceInput): DatasourceEntity {
     const { id, slug } = generateIdentity();
@@ -89,6 +103,7 @@ export class DatasourceEntity extends Entity<string, typeof DatasourceSchema> {
       updatedAt: now,
       createdBy: newDatasource.createdBy,
       updatedBy: newDatasource.createdBy,
+      isPublic: false,
     };
 
     return plainToClass(DatasourceEntity, DatasourceSchema.parse(datasource));

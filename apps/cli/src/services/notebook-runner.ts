@@ -96,6 +96,7 @@ export class NotebookRunner {
           updatedAt: now,
           createdBy: 'cli',
           updatedBy: 'cli',
+          isPublic: false,
         });
 
         agent = await FactoryAgent.create({

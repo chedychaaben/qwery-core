@@ -37,6 +37,18 @@ export const ConversationSchema = z.object({
     .describe('The date and time the conversation was last updated'),
   createdBy: z.string().describe('The user who created the conversation'),
   updatedBy: z.string().describe('The user who last updated the conversation'),
+  isPublic: z
+    .boolean()
+    .default(false)
+    .describe('If true, this conversation is publicly viewable'),
+  remixedFrom: z
+    .string()
+    .uuid()
+    .optional()
+    .nullable()
+    .describe(
+      'If set, this conversation was remixed from another conversation',
+    ),
 });
 
 export type Conversation = z.infer<typeof ConversationSchema>;
@@ -70,6 +82,10 @@ export class ConversationEntity extends Entity<
   public createdBy!: string;
   @Expose()
   public updatedBy!: string;
+  @Expose()
+  public isPublic!: boolean;
+  @Expose()
+  public remixedFrom?: string | null;
 
   public static create(
     newConversation: CreateConversationInput,
@@ -88,6 +104,7 @@ export class ConversationEntity extends Entity<
       updatedAt: now,
       createdBy: newConversation.createdBy,
       updatedBy: newConversation.createdBy,
+      isPublic: false,
     };
 
     return plainToClass(

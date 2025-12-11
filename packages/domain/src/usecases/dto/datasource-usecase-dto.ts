@@ -31,6 +31,8 @@ export class DatasourceOutput {
   public createdBy!: string;
   @Expose()
   public updatedBy!: string;
+  @Expose()
+  public isPublic!: boolean;
 
   public static new(datasource: Datasource): DatasourceOutput {
     return plainToClass(DatasourceOutput, datasource);

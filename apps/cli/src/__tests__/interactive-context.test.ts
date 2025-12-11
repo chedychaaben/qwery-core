@@ -28,6 +28,7 @@ describe('InteractiveContext', () => {
       updatedAt: new Date(),
       createdBy: 'user-1',
       updatedBy: 'user-1',
+      isPublic: false,
     };
 
     await container.getRepositories().datasource.create(testDatasource);

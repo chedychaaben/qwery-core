@@ -158,8 +158,6 @@ qwery.db-journal
 qwery.db-wal
 qwery-db-*
 
-apps/web/public/extensions/*
-
 # Workspace directories (DuckDB databases and view registries)
 **/workspace/
 packages/agent-factory-sdk/workspace/

@@ -44,7 +44,7 @@
   "dependencies": {
     "@electric-sql/pglite": "^0.3.12",
     "@qwery/extensions-sdk": "workspace:*",
-    "zod": "^3.25.76"
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@vitest/coverage-istanbul": "catalog:",
