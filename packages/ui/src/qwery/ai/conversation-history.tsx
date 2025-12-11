@@ -20,6 +20,8 @@ import {
   X,
   Edit,
   Trash2,
+  ChevronDown,
+  Loader2,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -53,10 +55,21 @@ export interface ConversationHistoryProps {
   onConversationsDelete?: (conversationIds: string[]) => void;
 }
 
-function formatRelativeTime(date: Date): string {
+function formatRelativeTime(date: Date, isCurrent = false): string {
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
+  const diffSeconds = Math.floor(diffMs / 1000);
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  // For current conversation, show "now" or "few seconds ago"
+  if (isCurrent) {
+    if (diffSeconds < 5) {
+      return 'now';
+    }
+    if (diffSeconds < 60) {
+      return 'few seconds ago';
+    }
+  }
 
   const timeStr = date.toLocaleTimeString('en-US', {
     hour: 'numeric',
@@ -96,10 +109,21 @@ function formatRelativeDate(date: Date): string {
 
 function groupConversationsByTime(
   conversations: Conversation[],
-): Record<string, Conversation[]> {
+  currentConversationId?: string,
+): {
+  currentConversation: Conversation | null;
+  groups: Record<string, Conversation[]>;
+} {
   const groups: Record<string, Conversation[]> = {};
+  let currentConversation: Conversation | null = null;
 
   conversations.forEach((conversation) => {
+    // Extract current conversation
+    if (conversation.id === currentConversationId) {
+      currentConversation = conversation;
+      return;
+    }
+
     const group = formatRelativeDate(conversation.updatedAt);
     if (!groups[group]) {
       groups[group] = [];
@@ -114,7 +138,7 @@ function groupConversationsByTime(
     }
   });
 
-  return groups;
+  return { currentConversation, groups };
 }
 
 function sortTimeGroups(groups: Record<string, Conversation[]>): string[] {
@@ -171,16 +195,38 @@ export function ConversationHistory({
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(20);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const editInputRef = useRef<HTMLInputElement>(null);
   const previousTitlesRef = useRef<Map<string, string>>(new Map());
 
-  const groupedConversations = useMemo(() => {
-    return groupConversationsByTime(conversations);
-  }, [conversations]);
+  // Get current conversation separately
+  const currentConversation = useMemo(() => {
+    return conversations.find((c) => c.id === currentConversationId) || null;
+  }, [conversations, currentConversationId]);
+
+  // Flatten all conversations (excluding current) and sort by updatedAt
+  const allConversations = useMemo(() => {
+    return conversations
+      .filter((c) => c.id !== currentConversationId)
+      .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+  }, [conversations, currentConversationId]);
+
+  // Get visible conversations based on pagination
+  const visibleConversations = useMemo(() => {
+    return allConversations.slice(0, visibleCount);
+  }, [allConversations, visibleCount]);
+
+  // Group visible conversations (current is handled separately in render)
+  const { groups: groupedConversations } = useMemo(() => {
+    return groupConversationsByTime(visibleConversations, currentConversationId);
+  }, [visibleConversations, currentConversationId]);
 
   const sortedGroups = useMemo(() => {
     return sortTimeGroups(groupedConversations);
   }, [groupedConversations]);
+
+  const hasMore = allConversations.length > visibleCount;
 
   const handleConversationSelect = (conversationSlug: string) => {
     if (!isEditMode) {
@@ -292,6 +338,22 @@ export function ConversationHistory({
     });
   }, [conversations]);
 
+  // Reset visible count when dialog opens
+  useEffect(() => {
+    if (open) {
+      setVisibleCount(20);
+    }
+  }, [open]);
+
+  const handleLoadMore = () => {
+    setIsLoadingMore(true);
+    // Small delay to show loading state, then load more
+    setTimeout(() => {
+      setVisibleCount((prev) => Math.min(prev + 20, allConversations.length));
+      setIsLoadingMore(false);
+    }, 100);
+  };
+
   return (
     <>
       <Button
@@ -370,6 +432,152 @@ export function ConversationHistory({
               </div>
             </div>
           </CommandEmpty>
+
+          {/* Current Conversation - Always on top */}
+          {currentConversation && (
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 px-4 py-2">
+                <div className="bg-border h-px flex-1" />
+                <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+                  Now
+                </span>
+                <div className="bg-border h-px flex-1" />
+              </div>
+              <CommandGroup heading="">
+                <CommandItem
+                  key={currentConversation.id}
+                  value={currentConversation.id}
+                  onSelect={() => {
+                    if (isEditMode) {
+                      handleToggleSelect(currentConversation.id);
+                    } else if (editingId !== currentConversation.id) {
+                      handleConversationSelect(currentConversation.slug);
+                    }
+                  }}
+                  className={cn(
+                    'group relative mx-2 my-0.5 rounded-md border transition-all',
+                    'border-primary/20 bg-primary/10 hover:border-primary/30',
+                    isEditMode &&
+                      selectedIds.has(currentConversation.id) &&
+                      'border-primary bg-primary/5 hover:border-primary/80',
+                    'data-[selected=true]:bg-accent',
+                  )}
+                >
+                  <div className="flex w-full items-center gap-2 px-2 py-1.5">
+                    <div className="flex size-6 shrink-0 items-center justify-center">
+                      {isEditMode ? (
+                        <Checkbox
+                          checked={selectedIds.has(currentConversation.id)}
+                          onCheckedChange={() =>
+                            handleToggleSelect(currentConversation.id)
+                          }
+                          onClick={(e) => e.stopPropagation()}
+                          className="size-4 shrink-0"
+                        />
+                      ) : (
+                        <div className="bg-primary/20 text-primary flex size-6 items-center justify-center rounded transition-colors">
+                          <MessageCircle className="size-3" />
+                        </div>
+                      )}
+                    </div>
+                    {editingId === currentConversation.id ? (
+                      <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                        <input
+                          ref={editInputRef}
+                          type="text"
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              handleSaveEdit(currentConversation.id);
+                            } else if (e.key === 'Escape') {
+                              handleCancelEdit();
+                            }
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          className={cn(
+                            'bg-background flex-1 rounded border px-2 py-1 text-sm outline-none focus:ring-1',
+                            editValue.trim().length < 1
+                              ? 'border-destructive focus:ring-destructive'
+                              : 'border-input focus:ring-ring',
+                          )}
+                          minLength={1}
+                          required
+                        />
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSaveEdit(currentConversation.id);
+                          }}
+                          disabled={editValue.trim().length < 1}
+                          className={cn(
+                            'rounded p-1 transition-colors',
+                            editValue.trim().length < 1
+                              ? 'text-muted-foreground cursor-not-allowed opacity-50'
+                              : 'text-primary hover:bg-accent',
+                          )}
+                        >
+                          <Check className="size-3.5" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCancelEdit();
+                          }}
+                          className="text-muted-foreground hover:bg-accent rounded p-1 transition-colors"
+                        >
+                          <X className="size-3.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                          <span
+                            className={cn(
+                              'truncate text-sm font-medium transition-all duration-300 text-primary',
+                              animatingIds.has(currentConversation.id) &&
+                                'animate-in fade-in-0 slide-in-from-left-2',
+                            )}
+                          >
+                            {currentConversation.title}
+                          </span>
+                          <span className="text-muted-foreground truncate text-xs">
+                            {formatRelativeTime(
+                              currentConversation.updatedAt,
+                              true,
+                            )}
+                          </span>
+                        </div>
+                        {!isEditMode && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleStartEdit(
+                                currentConversation.id,
+                                currentConversation.title,
+                              );
+                            }}
+                            className="text-muted-foreground hover:text-foreground hover:bg-accent shrink-0 rounded p-1 opacity-0 transition-all group-hover:opacity-100"
+                          >
+                            <Pencil className="size-3" />
+                          </button>
+                        )}
+                        {isProcessing ? (
+                          <div className="flex shrink-0 items-center">
+                            <div className="size-2 animate-pulse rounded-full bg-yellow-500 shadow-sm shadow-yellow-500/50" />
+                          </div>
+                        ) : (
+                          <div className="flex shrink-0 items-center">
+                            <div className="bg-primary size-1.5 rounded-full" />
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </CommandItem>
+              </CommandGroup>
+            </div>
+          )}
 
           {/* Existing Conversations */}
           {sortedGroups.map((groupKey) => {
@@ -504,7 +712,10 @@ export function ConversationHistory({
                                   {conversation.title}
                                 </span>
                                 <span className="text-muted-foreground truncate text-xs">
-                                  {formatRelativeTime(conversation.updatedAt)}
+                                  {formatRelativeTime(
+                                    conversation.updatedAt,
+                                    false,
+                                  )}
                                 </span>
                               </div>
                               {!isEditMode && (
@@ -521,15 +732,6 @@ export function ConversationHistory({
                                   <Pencil className="size-3" />
                                 </button>
                               )}
-                              {isCurrent && (
-                                <div className="flex shrink-0 items-center">
-                                  {isProcessing ? (
-                                    <div className="size-2 animate-pulse rounded-full bg-yellow-500 shadow-sm shadow-yellow-500/50" />
-                                  ) : (
-                                    <div className="bg-primary size-1.5 rounded-full" />
-                                  )}
-                                </div>
-                              )}
                             </>
                           )}
                         </div>
@@ -540,6 +742,28 @@ export function ConversationHistory({
               </div>
             );
           })}
+
+          {/* Load More Button */}
+          {hasMore && (
+            <div className="flex items-center justify-center border-t p-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleLoadMore}
+                disabled={isLoadingMore}
+                className="w-full"
+              >
+                {isLoadingMore ? (
+                  <>
+                    <Loader2 className="mr-2 size-4 animate-spin" />
+                    Loading...
+                  </>
+                ) : (
+                  'Load More'
+                )}
+              </Button>
+            </div>
+          )}
         </CommandList>
       </CommandDialog>
 
