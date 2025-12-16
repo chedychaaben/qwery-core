@@ -62,7 +62,8 @@
     },
     "test": {
       "dependsOn": [
-        "^topo"
+        "^topo",
+        "^build"
       ],
       "outputLogs": "errors-only"
     },
