@@ -916,7 +916,13 @@ export const PromptInputTools = ({
   className,
   ...props
 }: PromptInputToolsProps) => (
-  <div className={cn('flex min-w-0 flex-1 items-center gap-1 overflow-x-auto', className)} {...props} />
+  <div
+    className={cn(
+      'flex min-w-0 flex-1 items-center gap-1 overflow-x-auto',
+      className,
+    )}
+    {...props}
+  />
 );
 
 export type PromptInputButtonProps = ComponentProps<typeof InputGroupButton>;
@@ -1195,7 +1201,7 @@ export const PromptInputSelectTrigger = ({
 }: PromptInputSelectTriggerProps) => (
   <SelectTrigger
     className={cn(
-      'text-muted-foreground border-none bg-transparent font-medium shadow-none transition-colors w-auto max-w-[160px] gap-2',
+      'text-muted-foreground w-auto max-w-[160px] gap-2 border-none bg-transparent font-medium shadow-none transition-colors',
       'hover:bg-accent hover:text-foreground aria-expanded:bg-accent aria-expanded:text-foreground',
       className,
     )}

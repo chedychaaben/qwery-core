@@ -64,7 +64,8 @@ const getNotebookRoutes = (
       fullTitle,
       MAX_NOTEBOOK_NAME_LENGTH,
     );
-    const hasUnsavedChanges = unsavedNotebookSlugs?.includes(notebook.slug) ?? false;
+    const hasUnsavedChanges =
+      unsavedNotebookSlugs?.includes(notebook.slug) ?? false;
 
     return {
       label: truncatedTitle,
@@ -107,7 +108,11 @@ const getRoutes = (
           collapsible: true,
           collapsed: true,
           renderAction: notebookGroupAction,
-          children: getNotebookRoutes(notebooks, onDeleteNotebook, unsavedNotebookSlugs),
+          children: getNotebookRoutes(
+            notebooks,
+            onDeleteNotebook,
+            unsavedNotebookSlugs,
+          ),
         },
       ],
     },

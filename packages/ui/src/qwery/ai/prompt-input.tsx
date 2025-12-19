@@ -148,33 +148,34 @@ function PromptInputContent(props: QweryPromptInputProps) {
           />
         </PromptInputTools>
         <div className="shrink-0">
-        <PromptInputSubmit
-          disabled={
-            props.stopDisabled ||
-            (props.status !== 'streaming' &&
-              props.status !== 'submitted' &&
-              !props.input.trim() &&
-              attachmentsCount === 0)
-          }
-          status={props.status}
-          type={
-            (props.status === 'streaming' || props.status === 'submitted') &&
-            !props.stopDisabled
-              ? 'button'
-              : 'submit'
-          }
-          onClick={async (e) => {
-            if (
-              (props.status === 'streaming' || props.status === 'submitted') &&
-              !props.stopDisabled &&
-              props.onStop
-            ) {
-              e.preventDefault();
-              e.stopPropagation();
-              props.onStop();
+          <PromptInputSubmit
+            disabled={
+              props.stopDisabled ||
+              (props.status !== 'streaming' &&
+                props.status !== 'submitted' &&
+                !props.input.trim() &&
+                attachmentsCount === 0)
             }
-          }}
-        />
+            status={props.status}
+            type={
+              (props.status === 'streaming' || props.status === 'submitted') &&
+              !props.stopDisabled
+                ? 'button'
+                : 'submit'
+            }
+            onClick={async (e) => {
+              if (
+                (props.status === 'streaming' ||
+                  props.status === 'submitted') &&
+                !props.stopDisabled &&
+                props.onStop
+              ) {
+                e.preventDefault();
+                e.stopPropagation();
+                props.onStop();
+              }
+            }}
+          />
         </div>
       </PromptInputFooter>
     </>

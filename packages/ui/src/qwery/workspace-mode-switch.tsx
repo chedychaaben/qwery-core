@@ -3,11 +3,7 @@
 import * as React from 'react';
 import { Zap, Code2, Check, HelpCircle } from 'lucide-react';
 import { cn } from '../lib/utils';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '../shadcn/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '../shadcn/popover';
 import { Button } from '../shadcn/button';
 import { Card, CardContent } from '../shadcn/card';
 import { Badge } from '../shadcn/badge';
@@ -77,16 +73,16 @@ export function WorkspaceModeSwitch({
           onMouseLeave={handleMouseLeave}
           onClick={toggleMode}
           className={cn(
-            'flex items-center gap-2 px-3 h-9 font-medium border-2 border-[#ffcb51] hover:bg-accent/50 transition-all cursor-pointer shadow-sm dark:border-[#ffcb51]/70',
+            'hover:bg-accent/50 flex h-9 cursor-pointer items-center gap-2 border-2 border-[#ffcb51] px-3 font-medium shadow-sm transition-all dark:border-[#ffcb51]/70',
             className,
           )}
         >
           {currentMode === 'simple' ? (
-            <Zap className="h-4 w-4 text-[#ffcb51] fill-[#ffcb51]/20" />
+            <Zap className="h-4 w-4 fill-[#ffcb51]/20 text-[#ffcb51]" />
           ) : currentMode === 'advanced' ? (
             <Code2 className="h-4 w-4 text-[#ffcb51]" />
           ) : (
-            <HelpCircle className="h-4 w-4 text-muted-foreground" />
+            <HelpCircle className="text-muted-foreground h-4 w-4" />
           )}
           <span>
             {currentMode === 'simple'
@@ -97,48 +93,61 @@ export function WorkspaceModeSwitch({
           </span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent 
-        side="bottom" 
-        align="end" 
+      <PopoverContent
+        side="bottom"
+        align="end"
         sideOffset={8}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        className="w-[320px] p-2 space-y-2"
+        className="w-[320px] space-y-2 p-2"
       >
         <div className="px-2 py-1.5">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             Switch mode
           </p>
         </div>
         <div className="grid gap-2">
           <Card
             className={cn(
-              'relative overflow-hidden transition-all hover:border-[#ffcb51]/50 cursor-pointer group border-2',
-              currentMode === 'simple' ? 'border-[#ffcb51] bg-[#ffcb51]/5' : 'border-transparent bg-muted/30',
+              'group relative cursor-pointer overflow-hidden border-2 transition-all hover:border-[#ffcb51]/50',
+              currentMode === 'simple'
+                ? 'border-[#ffcb51] bg-[#ffcb51]/5'
+                : 'bg-muted/30 border-transparent',
             )}
             onClick={() => handleModeChange('simple')}
           >
-            <CardContent className="p-3 flex items-start gap-3">
-              <div className={cn(
-                "mt-0.5 p-1.5 rounded-lg transition-colors",
-                currentMode === 'simple' ? "bg-[#ffcb51]/20" : "bg-muted group-hover:bg-[#ffcb51]/10"
-              )}>
-                <Zap className={cn(
-                  "h-4 w-4 transition-colors",
-                  currentMode === 'simple' ? "text-[#ffcb51] fill-[#ffcb51]" : "text-muted-foreground group-hover:text-[#ffcb51]"
-                )} />
+            <CardContent className="flex items-start gap-3 p-3">
+              <div
+                className={cn(
+                  'mt-0.5 rounded-lg p-1.5 transition-colors',
+                  currentMode === 'simple'
+                    ? 'bg-[#ffcb51]/20'
+                    : 'bg-muted group-hover:bg-[#ffcb51]/10',
+                )}
+              >
+                <Zap
+                  className={cn(
+                    'h-4 w-4 transition-colors',
+                    currentMode === 'simple'
+                      ? 'fill-[#ffcb51] text-[#ffcb51]'
+                      : 'text-muted-foreground group-hover:text-[#ffcb51]',
+                  )}
+                />
               </div>
               <div className="flex-1 space-y-0.5">
                 <div className="flex items-center justify-between">
                   <h4 className="text-sm font-semibold">{simpleLabel}</h4>
                   {currentMode === 'simple' && (
-                    <Badge variant="default" className="h-4.5 gap-1 px-1 bg-[#ffcb51] text-black hover:bg-[#ffcb51]/90 border-none font-bold text-[10px]">
+                    <Badge
+                      variant="default"
+                      className="h-4.5 gap-1 border-none bg-[#ffcb51] px-1 text-[10px] font-bold text-black hover:bg-[#ffcb51]/90"
+                    >
                       <Check className="h-2.5 w-2.5" />
                       Active
                     </Badge>
                   )}
                 </div>
-                <p className="text-[11px] text-muted-foreground leading-tight">
+                <p className="text-muted-foreground text-[11px] leading-tight">
                   Automated analysis and AI insights.
                 </p>
               </div>
@@ -147,32 +156,45 @@ export function WorkspaceModeSwitch({
 
           <Card
             className={cn(
-              'relative overflow-hidden transition-all hover:border-[#ffcb51]/50 cursor-pointer group border-2',
-              currentMode === 'advanced' ? 'border-[#ffcb51] bg-[#ffcb51]/5' : 'border-transparent bg-muted/30',
+              'group relative cursor-pointer overflow-hidden border-2 transition-all hover:border-[#ffcb51]/50',
+              currentMode === 'advanced'
+                ? 'border-[#ffcb51] bg-[#ffcb51]/5'
+                : 'bg-muted/30 border-transparent',
             )}
             onClick={() => handleModeChange('advanced')}
           >
-            <CardContent className="p-3 flex items-start gap-3">
-              <div className={cn(
-                "mt-0.5 p-1.5 rounded-lg transition-colors",
-                currentMode === 'advanced' ? "bg-[#ffcb51]/20" : "bg-muted group-hover:bg-[#ffcb51]/10"
-              )}>
-                <Code2 className={cn(
-                  "h-4 w-4 transition-colors",
-                  currentMode === 'advanced' ? "text-[#ffcb51]" : "text-muted-foreground group-hover:text-[#ffcb51]"
-                )} />
+            <CardContent className="flex items-start gap-3 p-3">
+              <div
+                className={cn(
+                  'mt-0.5 rounded-lg p-1.5 transition-colors',
+                  currentMode === 'advanced'
+                    ? 'bg-[#ffcb51]/20'
+                    : 'bg-muted group-hover:bg-[#ffcb51]/10',
+                )}
+              >
+                <Code2
+                  className={cn(
+                    'h-4 w-4 transition-colors',
+                    currentMode === 'advanced'
+                      ? 'text-[#ffcb51]'
+                      : 'text-muted-foreground group-hover:text-[#ffcb51]',
+                  )}
+                />
               </div>
               <div className="flex-1 space-y-0.5">
                 <div className="flex items-center justify-between">
                   <h4 className="text-sm font-semibold">{advancedLabel}</h4>
                   {currentMode === 'advanced' && (
-                    <Badge variant="default" className="h-4.5 gap-1 px-1 bg-[#ffcb51] text-black hover:bg-[#ffcb51]/90 border-none font-bold text-[10px]">
+                    <Badge
+                      variant="default"
+                      className="h-4.5 gap-1 border-none bg-[#ffcb51] px-1 text-[10px] font-bold text-black hover:bg-[#ffcb51]/90"
+                    >
                       <Check className="h-2.5 w-2.5" />
                       Active
                     </Badge>
                   )}
                 </div>
-                <p className="text-[11px] text-muted-foreground leading-tight">
+                <p className="text-muted-foreground text-[11px] leading-tight">
                   SQL notebooks and data exploration.
                 </p>
               </div>

@@ -70,10 +70,10 @@ export default function ConversationPage() {
   }
 
   return (
-        <Agent
-          ref={agentRef}
-          conversationSlug={slug as string}
-          initialMessages={getMessages.data}
-        />
+    <Agent
+      ref={agentRef}
+      conversationSlug={slug as string}
+      initialMessages={getMessages.data}
+    />
   );
 }

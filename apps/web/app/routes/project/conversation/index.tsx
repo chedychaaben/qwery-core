@@ -53,13 +53,11 @@ export default function ConversationIndexPage() {
   const itemsPerPage = 4;
 
   const project = useGetProjectBySlug(repositories.project, projectSlug || '');
-  const {
-    data: allConversations = [],
-    isLoading: isLoadingConversations,
-  } = useGetConversationsByProject(
-    repositories.conversation,
-    workspace.projectId,
-  );
+  const { data: allConversations = [], isLoading: isLoadingConversations } =
+    useGetConversationsByProject(
+      repositories.conversation,
+      workspace.projectId,
+    );
 
   const sortedConversations = useMemo(
     () =>
@@ -146,8 +144,8 @@ export default function ConversationIndexPage() {
           ) : (
             <div className="space-y-4 text-center">
               <div className="flex justify-center">
-                <div className="bg-[#ffcb51]/10 flex size-16 items-center justify-center rounded-full">
-                  <Sparkles className="text-[#ffcb51] size-8" />
+                <div className="flex size-16 items-center justify-center rounded-full bg-[#ffcb51]/10">
+                  <Sparkles className="size-8 text-[#ffcb51]" />
                 </div>
               </div>
               <div className="space-y-2">
@@ -168,8 +166,8 @@ export default function ConversationIndexPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-center gap-2">
                 <ClockIcon className="text-muted-foreground size-4" />
-                <h2 className="text-muted-foreground text-sm font-semibold tracking-wide uppercase my-2">
-                Recent Conversations
+                <h2 className="text-muted-foreground my-2 text-sm font-semibold tracking-wide uppercase">
+                  Recent Conversations
                 </h2>
               </div>
               <div className="mx-auto w-full max-w-2xl space-y-2">
@@ -193,7 +191,7 @@ export default function ConversationIndexPage() {
               <div className="flex items-center justify-center gap-2">
                 <ClockIcon className="text-muted-foreground size-4" />
                 <h2 className="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
-                Recent Conversations
+                  Recent Conversations
                 </h2>
               </div>
               <div className="mx-auto w-full max-w-2xl space-y-2">
@@ -209,12 +207,12 @@ export default function ConversationIndexPage() {
                       key={conversation.id}
                       onClick={() => handleConversationClick(conversation)}
                       className={cn(
-                        'group bg-card flex w-full items-center gap-4 rounded-lg border px-5 py-4 text-left transition-all cursor-pointer',
-                        'hover:border-[#ffcb51]/20 hover:bg-accent/50 hover:shadow-sm',
-                        'focus-visible:ring-[#ffcb51]/20 focus-visible:ring-2 focus-visible:outline-none',
+                        'group bg-card flex w-full cursor-pointer items-center gap-4 rounded-lg border px-5 py-4 text-left transition-all',
+                        'hover:bg-accent/50 hover:border-[#ffcb51]/20 hover:shadow-sm',
+                        'focus-visible:ring-2 focus-visible:ring-[#ffcb51]/20 focus-visible:outline-none',
                       )}
                     >
-                      <div className="bg-muted group-hover:bg-[#ffcb51]/10 group-hover:text-[#ffcb51] flex size-10 shrink-0 items-center justify-center rounded-lg transition-colors">
+                      <div className="bg-muted flex size-10 shrink-0 items-center justify-center rounded-lg transition-colors group-hover:bg-[#ffcb51]/10 group-hover:text-[#ffcb51]">
                         <MessageCircle className="size-5" />
                       </div>
                       <div className="flex min-w-0 flex-1 flex-col gap-1">
@@ -237,7 +235,9 @@ export default function ConversationIndexPage() {
                   <Button
                     variant="outline"
                     size="icon"
-                    onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.max(1, prev - 1))
+                    }
                     disabled={!hasPrevPage}
                     className="h-8 w-8"
                   >
