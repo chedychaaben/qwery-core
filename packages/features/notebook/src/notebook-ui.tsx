@@ -73,8 +73,6 @@ interface NotebookUIProps {
 // Sortable wrapper for cells
 function SortableCell({
   cell,
-  isCollapsed,
-  onToggleCollapse,
   onQueryChange,
   onDatasourceChange,
   onRunQuery,
@@ -95,8 +93,6 @@ function SortableCell({
   onCloseAiPopup,
 }: {
   cell: NotebookCellData;
-  isCollapsed: boolean;
-  onToggleCollapse: () => void;
   onQueryChange: (query: string) => void;
   onDatasourceChange: (datasourceId: string | null) => void;
   onRunQuery?: (query: string, datasourceId: string) => void;
@@ -181,8 +177,6 @@ function SortableCell({
       <NotebookCell
         cell={cell}
         datasources={datasources}
-        isCollapsed={isCollapsed}
-        onToggleCollapse={onToggleCollapse}
         onQueryChange={onQueryChange}
         onDatasourceChange={onDatasourceChange}
         onRunQuery={onRunQuery}
@@ -474,8 +468,6 @@ export function NotebookUI({
     return [];
   });
 
-  const [collapsedCells, setCollapsedCells] = useState<Set<number>>(new Set());
-
   const [fullViewCellId, setFullViewCellId] = useState<number | null>(null);
 
   const [animatingCell, setAnimatingCell] = useState<{
@@ -561,18 +553,6 @@ export function NotebookUI({
         return newCells;
       });
     }
-  };
-
-  const handleToggleCollapse = (cellId: number) => {
-    setCollapsedCells((prev) => {
-      const next = new Set(prev);
-      if (next.has(cellId)) {
-        next.delete(cellId);
-      } else {
-        next.add(cellId);
-      }
-      return next;
-    });
   };
 
   const handleAddCell = (
@@ -896,10 +876,6 @@ export function NotebookUI({
                     <React.Fragment key={cell.cellId}>
                       <SortableCell
                         cell={cell}
-                        isCollapsed={collapsedCells.has(cell.cellId)}
-                        onToggleCollapse={() =>
-                          handleToggleCollapse(cell.cellId)
-                        }
                         onQueryChange={(query) =>
                           handleQueryChange(cell.cellId, query)
                         }

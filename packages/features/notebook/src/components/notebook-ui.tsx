@@ -19,7 +19,15 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { BookText, Loader2, Pencil, Plus, Sparkles, Trash2, Type } from 'lucide-react';
+import {
+  BookText,
+  Loader2,
+  Pencil,
+  Plus,
+  Sparkles,
+  Trash2,
+  Type,
+} from 'lucide-react';
 
 import type { DatasourceResultSet, Notebook } from '@qwery/domain/entities';
 import { WorkspaceModeEnum } from '@qwery/domain/enums';
@@ -602,11 +610,12 @@ export function NotebookUI({
         ? Math.max(...cells.map((c: NotebookCellData) => c.cellId), 0)
         : 0;
     const newCell: NotebookCellData = {
-      query: cellType === 'query' 
-        ? '\n'.repeat(9) // 10 lines total (9 newlines + 1 empty line)
-        : cellType === 'text'
-          ? '# Markdown Cell\n\nWrite your markdown content here...\n'
-          : '', // Prompt cells start empty
+      query:
+        cellType === 'query'
+          ? '\n'.repeat(9) // 10 lines total (9 newlines + 1 empty line)
+          : cellType === 'text'
+            ? '# Markdown Cell\n\nWrite your markdown content here...\n'
+            : '', // Prompt cells start empty
       cellId: maxCellId + 1,
       cellType,
       datasources: [],
@@ -885,7 +894,7 @@ export function NotebookUI({
                   <h1 className="text-2xl font-semibold">{headerTitle}</h1>
                   {hasUnsavedChanges && (
                     <span
-                      className="h-3 w-3 shrink-0 rounded-full bg-[#ffcb51] border border-[#ffcb51]/50 shadow-sm"
+                      className="h-3 w-3 shrink-0 rounded-full border border-[#ffcb51]/50 bg-[#ffcb51] shadow-sm"
                       aria-label="Unsaved changes"
                       title="Unsaved changes"
                     />
@@ -969,14 +978,14 @@ export function NotebookUI({
                     {/* Error Display - Between cells */}
                     {cell.cellType === 'query' && cellError && (
                       <div className="py-2">
-                          <Alert variant="destructive" className="m-4">
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertDescription className="font-mono text-sm">
-                              {cellError}
-                            </AlertDescription>
-                          </Alert>
-                        </div>
-                      )}
+                        <Alert variant="destructive" className="m-4">
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertDescription className="font-mono text-sm">
+                            {cellError}
+                          </AlertDescription>
+                        </Alert>
+                      </div>
+                    )}
                     {index < cells.length - 1 && (
                       <CellDivider
                         onAddCell={(type) => handleAddCell(cell.cellId, type)}
@@ -1000,15 +1009,21 @@ export function NotebookUI({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="center" className="w-48">
-                    <DropdownMenuItem onClick={() => handleAddCell(undefined, 'query')}>
+                    <DropdownMenuItem
+                      onClick={() => handleAddCell(undefined, 'query')}
+                    >
                       <Type className="mr-2 h-4 w-4" />
                       <span>Code Cell</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleAddCell(undefined, 'text')}>
+                    <DropdownMenuItem
+                      onClick={() => handleAddCell(undefined, 'text')}
+                    >
                       <BookText className="mr-2 h-4 w-4" />
                       <span>Markdown Cell</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleAddCell(undefined, 'prompt')}>
+                    <DropdownMenuItem
+                      onClick={() => handleAddCell(undefined, 'prompt')}
+                    >
                       <Sparkles className="mr-2 h-4 w-4" />
                       <span>Prompt Cell</span>
                     </DropdownMenuItem>
