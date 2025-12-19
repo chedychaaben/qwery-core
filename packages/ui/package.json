@@ -129,6 +129,7 @@
     "./alert": "./src/shadcn/alert.tsx",
     "./badge": "./src/shadcn/badge.tsx",
     "./radio-group": "./src/shadcn/radio-group.tsx",
+    "./resizable": "./src/shadcn/resizable.tsx",
     "./separator": "./src/shadcn/separator.tsx",
     "./input-otp": "./src/shadcn/input-otp.tsx",
     "./textarea": "./src/shadcn/textarea.tsx",
