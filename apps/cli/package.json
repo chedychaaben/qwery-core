@@ -9,7 +9,7 @@
   "type": "module",
   "sideEffects": false,
   "scripts": {
-    "build": "tsup --config tsup.config.ts && chmod +x dist/index.js",
+    "build": "tsup --config tsup.config.ts && (wsl chmod +x dist/index.js || chmod +x dist/index.js || exit 0)",
     "clean": "rimraf dist node_modules/.cache/tsbuildinfo.json",
     "dev": "echo \"Use pnpm --filter cli start -- <command>\"",
     "format": "prettier --check \"src/**/*.{ts,tsx}\"",
